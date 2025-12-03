@@ -1,0 +1,65 @@
+name: backend CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    name: tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgres://postgres:test@localhost:5432/test_db?sslmode=disable
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+
+      - run: go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+      - run: go install github.com/pressly/goose/v3/cmd/goose@latest
+
+      - name: go build
+        run: go build ./backend/...
+
+      - name: sqlc
+        run: sqlc generate
+
+      - name: db mgirations
+        run: make migrate-up
+
+      - name: tests
+        run: go test -cover ./backend/...
+
+      - run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+      - name: sec
+        run: gosec ./backend/...
+
+  style:
+    name: style
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+
+      - name: formatting
+        run: test -z "$(go fmt ./backend/...)"
+
+      - run: go install honnef.co/go/tools/cmd/staticcheck@latest
+
+      - name: linting
+        run: staticcheck ./backend/...
