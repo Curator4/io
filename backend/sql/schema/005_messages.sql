@@ -5,7 +5,7 @@ CREATE TABLE messages (
   updated_at TIMESTAMP NOT NULL DEFAULT now(),
   conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
   role TEXT NOT NULL,
-  content TEXT NOT NULL
+  content JSONB NOT NULL
 );
 
 -- +goose Down
