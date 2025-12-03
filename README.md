@@ -7,12 +7,12 @@ Personal AI assistant with multi-frontend support and centralized Go backend.
 ### Backend (Go)
 
 **Infrastructure**
-- [ ] CI/CD pipeline
+- [x] CI/CD pipeline
 - [ ] Docker containerization
-- [ ] PostgreSQL database
-  - [ ] Schema design
-  - [ ] Goose migrations
-  - [ ] sqlc integration
+- [x] PostgreSQL database
+  - [x] Schema design
+  - [x] Goose migrations
+  - [x] sqlc integration
 
 **MCP Host**
 - [ ] MCP server implementation

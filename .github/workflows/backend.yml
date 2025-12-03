@@ -30,6 +30,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: stable
+          cache-dependency-path: backend/go.sum
 
       - run: go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
       - run: go install github.com/pressly/goose/v3/cmd/goose@latest
@@ -40,6 +41,9 @@ jobs:
 
       - name: sqlc
         run: sqlc generate
+
+      - name: create .env
+        run: echo "DATABASE_URL=${{ env.DATABASE_URL }}" > .env
 
       - name: db mgirations
         run: make migrate-up
@@ -62,6 +66,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: stable
+          cache-dependency-path: backend/go.sum
 
       - name: formatting
         working-directory: ./backend
