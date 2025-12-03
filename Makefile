@@ -8,6 +8,9 @@ migrate-up:
 migrate-down:
 	goose -dir ./backend/sql/schema postgres "$(DATABASE_URL)" down
 
+migrate-reset:
+	goose -dir ./backend/sql/schema postgres "$(DATABASE_URL)" down-to 0
+
 migrate-status:
 	goose -dir ./backend/sql/schema postgres "$(DATABASE_URL)" status
 

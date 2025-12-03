@@ -3,11 +3,10 @@ CREATE TABLE messages (
   id UUID PRIMARY KEY,
   created_at TIMESTAMP NOT NULL DEFAULT now(),
   updated_at TIMESTAMP NOT NULL DEFAULT now(),
+  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
   role TEXT NOT NULL,
-  context TEXT,
-  conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE
+  content TEXT NOT NULL
 );
-
 
 -- +goose Down
 DROP TABLE messages;

@@ -1,15 +1,11 @@
 -- +goose Up
-CREATE TABLE ai_configs (
+CREATE TABLE conversations (
   id UUID PRIMARY KEY,
   created_at TIMESTAMP NOT NULL DEFAULT now(),
   updated_at TIMESTAMP NOT NULL DEFAULT now(),
   last_used_at TIMESTAMP,
-  name TEXT NOT NULL UNIQUE,
-  api TEXT NOT NULL,
-  model TEXT NOT NULL,
-  system_prompt TEXT
+  name TEXT
 );
 
-
 -- +goose Down
-DROP TABLE ai_configs;
+DROP TABLE conversations;
