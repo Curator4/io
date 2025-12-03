@@ -1,0 +1,11 @@
+.env
+.env.*
+
+# go
+*.exe
+*.test
+*.out
+/backend/bin
+
+# Node
+node_modules/
