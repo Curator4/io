@@ -30,11 +30,18 @@ type Conversation struct {
 	Name       sql.NullString
 }
 
+type ConversationParticipant struct {
+	ConversationID uuid.UUID
+	UserID         uuid.UUID
+	JoinedAt       time.Time
+}
+
 type Message struct {
 	ID             uuid.UUID
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	ConversationID uuid.UUID
+	UserID         uuid.NullUUID
 	Role           string
 	Content        json.RawMessage
 }
@@ -49,6 +56,13 @@ type Model struct {
 }
 
 type Provider struct {
+	ID        uuid.UUID
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Name      string
+}
+
+type User struct {
 	ID        uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time

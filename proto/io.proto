@@ -1,0 +1,138 @@
+syntax = "proto3";
+
+package io;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/curator4/io/backend/internal/proto";
+
+// Core message types
+message User {
+  string id = 1;
+  string name = 2;
+  google.protobuf.Timestamp created_at = 3;
+  google.protobuf.Timestamp updated_at = 4;
+}
+
+message Message {
+  string id = 1;
+  string conversation_id = 2;
+  string user_id = 3; // null for assistant messages
+  string role = 4; // "user", "assistant", "system"
+  string content = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message Conversation {
+  string id = 1;
+  string name = 2;
+  google.protobuf.Timestamp created_at = 3;
+  google.protobuf.Timestamp updated_at = 4;
+}
+
+message Provider {
+  string id = 1;
+  string name = 2;
+  google.protobuf.Timestamp created_at = 3;
+  google.protobuf.Timestamp updated_at = 4;
+}
+
+message Model {
+  string id = 1;
+  string provider_id = 2;
+  string name = 3;
+  string description = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message AIConfig {
+  string id = 1;
+  string name = 2;
+  string model_id = 3;
+  string system_prompt = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+  google.protobuf.Timestamp last_used_at = 7;
+}
+
+// Request/Response messages
+message SendMessageRequest {
+  string content = 1;
+  string user_id = 2;
+  string role = 3; // "user", "assistant", "system"
+  string conversation_id = 4; // Optional - specify which conversation to use
+}
+
+message SendMessageResponse {
+  Message user_message = 1; // The message that was sent
+  Message assistant_message = 2; // The AI's response
+  string conversation_id = 3;
+}
+
+message ListConversationsRequest {
+  string user_id = 1;
+}
+
+message ListConversationsResponse {
+  repeated Conversation conversations = 1;
+}
+
+message LoadConversationRequest {
+  string conversation_id = 1;
+  string user_id = 2;
+}
+
+message LoadConversationResponse {
+  Conversation conversation = 1;
+  repeated Message messages = 2;
+}
+
+message DeleteConversationRequest {
+  string conversation_id = 1;
+  string user_id = 2;
+}
+
+message DeleteConversationResponse {
+  bool success = 1;
+}
+
+message ListAIConfigsRequest {}
+
+message ListAIConfigsResponse {
+  repeated AIConfig configs = 1;
+}
+
+message SwitchAIConfigRequest {
+  string config_id = 1;
+  string user_id = 2;
+}
+
+message SwitchAIConfigResponse {
+  bool success = 1;
+  AIConfig config = 2;
+}
+
+message ListProvidersRequest {}
+
+message ListProvidersResponse {
+  repeated Provider providers = 1;
+}
+
+// The main service
+service IOService {
+  // Send a message and get AI response
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
+
+  // Conversation management
+  rpc ListConversations(ListConversationsRequest) returns (ListConversationsResponse);
+  rpc LoadConversation(LoadConversationRequest) returns (LoadConversationResponse);
+  rpc DeleteConversation(DeleteConversationRequest) returns (DeleteConversationResponse);
+
+  // AI Config management
+  rpc ListAIConfigs(ListAIConfigsRequest) returns (ListAIConfigsResponse);
+  rpc SwitchAIConfig(SwitchAIConfigRequest) returns (SwitchAIConfigResponse);
+
+  // Provider management
+  rpc ListProviders(ListProvidersRequest) returns (ListProvidersResponse);
+}

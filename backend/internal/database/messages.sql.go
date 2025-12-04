@@ -22,7 +22,7 @@ VALUES (
   $2,
   $3
 )
-RETURNING id, created_at, updated_at, conversation_id, role, content
+RETURNING id, created_at, updated_at, conversation_id, user_id, role, content
 `
 
 type CreateMessageParams struct {
@@ -39,6 +39,7 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ConversationID,
+		&i.UserID,
 		&i.Role,
 		&i.Content,
 	)
@@ -46,7 +47,7 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 }
 
 const getMessagesByConversation = `-- name: GetMessagesByConversation :many
-SELECT id, created_at, updated_at, conversation_id, role, content FROM messages
+SELECT id, created_at, updated_at, conversation_id, user_id, role, content FROM messages
 WHERE conversation_id = $1
 ORDER BY created_at ASC
 `
@@ -65,6 +66,7 @@ func (q *Queries) GetMessagesByConversation(ctx context.Context, conversationID 
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.ConversationID,
+			&i.UserID,
 			&i.Role,
 			&i.Content,
 		); err != nil {
