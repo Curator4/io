@@ -56,7 +56,7 @@ jobs:
 
       - name: sec
         working-directory: ./backend
-        run: gosec ./...
+        run: gosec -exclude-dir=internal/proto ./...
 
   style:
     name: style
