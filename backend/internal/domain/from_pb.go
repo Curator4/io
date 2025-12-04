@@ -1,8 +1,8 @@
 package domain
 
 import (
-	"github.com/google/uuid"
 	pb "github.com/curator4/io/backend/internal/proto"
+	"github.com/google/uuid"
 )
 
 // UserFromPb converts a protobuf User to domain User
