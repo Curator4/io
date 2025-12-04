@@ -34,7 +34,8 @@ func ConversationFromDB(c database.Conversation) Conversation {
 func MessageFromDB(m database.Message) Message {
 	// Content is stored as JSONB, extract the string value
 	var content string
-	json.Unmarshal(m.Content, &content)
+	// Ignore unmarshal errors - if content is invalid JSON, use empty string
+	_ = json.Unmarshal(m.Content, &content)
 
 	return Message{
 		ID:             m.ID,

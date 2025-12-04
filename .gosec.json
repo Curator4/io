@@ -1,0 +1,5 @@
+{
+  "exclude-dirs": [
+    "backend/internal/proto"
+  ]
+}
