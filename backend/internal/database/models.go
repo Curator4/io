@@ -49,7 +49,6 @@ type Message struct {
 type Model struct {
 	ID          uuid.UUID
 	CreatedAt   time.Time
-	UpdatedAt   time.Time
 	ProviderID  uuid.UUID
 	Name        string
 	Description sql.NullString

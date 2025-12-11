@@ -11,6 +11,10 @@ VALUES (
 RETURNING *;
 
 -- name: GetMessagesByConversation :many
-SELECT * FROM messages
-WHERE conversation_id = $1
-ORDER BY created_at ASC;
+SELECT
+  m.*,
+  sqlc.embed(u)
+FROM messages m
+LEFT JOIN users u ON m.user_id = u.id
+WHERE m.conversation_id = $1
+ORDER BY m.created_at ASC;

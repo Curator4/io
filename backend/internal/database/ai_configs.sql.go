@@ -8,6 +8,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -57,13 +58,28 @@ func (q *Queries) DeleteAIConfig(ctx context.Context, id uuid.UUID) error {
 }
 
 const getAIConfigByID = `-- name: GetAIConfigByID :one
-SELECT id, created_at, updated_at, last_used_at, name, model_id, system_prompt FROM ai_configs
-WHERE id = $1
+SELECT
+  ac.id, ac.created_at, ac.updated_at, ac.last_used_at, ac.name, ac.model_id, ac.system_prompt,
+  m.id, m.created_at, m.provider_id, m.name, m.description
+FROM ai_configs ac
+JOIN models m ON ac.model_id = m.id
+WHERE ac.id = $1
 `
 
-func (q *Queries) GetAIConfigByID(ctx context.Context, id uuid.UUID) (AiConfig, error) {
+type GetAIConfigByIDRow struct {
+	ID           uuid.UUID
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	LastUsedAt   sql.NullTime
+	Name         string
+	ModelID      uuid.UUID
+	SystemPrompt sql.NullString
+	Model        Model
+}
+
+func (q *Queries) GetAIConfigByID(ctx context.Context, id uuid.UUID) (GetAIConfigByIDRow, error) {
 	row := q.db.QueryRowContext(ctx, getAIConfigByID, id)
-	var i AiConfig
+	var i GetAIConfigByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
@@ -72,6 +88,11 @@ func (q *Queries) GetAIConfigByID(ctx context.Context, id uuid.UUID) (AiConfig, 
 		&i.Name,
 		&i.ModelID,
 		&i.SystemPrompt,
+		&i.Model.ID,
+		&i.Model.CreatedAt,
+		&i.Model.ProviderID,
+		&i.Model.Name,
+		&i.Model.Description,
 	)
 	return i, err
 }

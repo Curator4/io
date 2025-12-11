@@ -28,17 +28,34 @@ func ConversationFromPb(c *pb.Conversation) Conversation {
 
 // MessageFromPb converts a protobuf Message to domain Message
 func MessageFromPb(m *pb.Message) Message {
+	var content MessageContent
+	if m.Content != nil {
+		content.Text = m.Content.Text
+
+		// Convert media items
+		if len(m.Content.Media) > 0 {
+			content.Media = make([]MediaItem, len(m.Content.Media))
+			for i, item := range m.Content.Media {
+				content.Media[i] = MediaItem{
+					Type:     item.Type,
+					URL:      item.Url,
+					FileName: item.FileName,
+				}
+			}
+		}
+	}
+
 	msg := Message{
 		ID:             uuid.MustParse(m.Id),
 		ConversationID: uuid.MustParse(m.ConversationId),
-		Role:           m.Role,
-		Content:        m.Content,
+		Role:           Role(m.Role),
+		Content:        content,
 		CreatedAt:      m.CreatedAt.AsTime(),
 	}
 
 	if m.UserId != "" {
 		uid := uuid.MustParse(m.UserId)
-		msg.UserID = &uid
+		msg.User = &User{ID: uid}
 	}
 
 	return msg
@@ -62,7 +79,6 @@ func ModelFromPb(m *pb.Model) Model {
 		Name:        m.Name,
 		Description: m.Description,
 		CreatedAt:   m.CreatedAt.AsTime(),
-		UpdatedAt:   m.UpdatedAt.AsTime(),
 	}
 }
 

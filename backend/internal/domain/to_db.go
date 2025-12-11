@@ -32,14 +32,19 @@ func ConversationToDB(c Conversation) database.Conversation {
 
 // MessageToDB converts a domain Message to database Message
 func MessageToDB(m Message) database.Message {
-	// Content needs to be marshaled to JSONB
+	// Content needs to be marshaled to JSONB (MessageContent already has json tags)
 	contentJSON, _ := json.Marshal(m.Content)
+
+	var userID uuid.NullUUID
+	if m.User != nil {
+		userID = uuid.NullUUID{UUID: m.User.ID, Valid: true}
+	}
 
 	return database.Message{
 		ID:             m.ID,
 		ConversationID: m.ConversationID,
-		UserID:         ptrToUuidNullUUID(m.UserID),
-		Role:           m.Role,
+		UserID:         userID,
+		Role:           string(m.Role),
 		Content:        contentJSON,
 		CreatedAt:      m.CreatedAt,
 		UpdatedAt:      m.CreatedAt, // Messages don't get updated, so use CreatedAt
@@ -64,7 +69,6 @@ func ModelToDB(m Model) database.Model {
 		Name:        m.Name,
 		Description: stringToSqlNullString(m.Description),
 		CreatedAt:   m.CreatedAt,
-		UpdatedAt:   m.UpdatedAt,
 	}
 }
 
@@ -73,7 +77,7 @@ func AIConfigToDB(a AIConfig) database.AiConfig {
 	return database.AiConfig{
 		ID:           a.ID,
 		Name:         a.Name,
-		ModelID:      a.ModelID,
+		ModelID:      a.Model.ID, // Extract model ID from Model object
 		SystemPrompt: stringToSqlNullString(a.SystemPrompt),
 		CreatedAt:    a.CreatedAt,
 		UpdatedAt:    a.UpdatedAt,

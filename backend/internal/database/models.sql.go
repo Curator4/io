@@ -22,7 +22,7 @@ VALUES (
   $2,
   $3
 )
-RETURNING id, created_at, updated_at, provider_id, name, description
+RETURNING id, created_at, provider_id, name, description
 `
 
 type CreateModelParams struct {
@@ -37,7 +37,6 @@ func (q *Queries) CreateModel(ctx context.Context, arg CreateModelParams) (Model
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
-		&i.UpdatedAt,
 		&i.ProviderID,
 		&i.Name,
 		&i.Description,
@@ -56,7 +55,7 @@ func (q *Queries) DeleteModel(ctx context.Context, id uuid.UUID) error {
 }
 
 const getModelByID = `-- name: GetModelByID :one
-SELECT id, created_at, updated_at, provider_id, name, description FROM models
+SELECT id, created_at, provider_id, name, description FROM models
 WHERE id = $1
 `
 
@@ -66,7 +65,6 @@ func (q *Queries) GetModelByID(ctx context.Context, id uuid.UUID) (Model, error)
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
-		&i.UpdatedAt,
 		&i.ProviderID,
 		&i.Name,
 		&i.Description,
@@ -75,7 +73,7 @@ func (q *Queries) GetModelByID(ctx context.Context, id uuid.UUID) (Model, error)
 }
 
 const getModelByName = `-- name: GetModelByName :one
-SELECT id, created_at, updated_at, provider_id, name, description FROM models
+SELECT id, created_at, provider_id, name, description FROM models
 WHERE name = $1
 `
 
@@ -85,7 +83,6 @@ func (q *Queries) GetModelByName(ctx context.Context, name string) (Model, error
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
-		&i.UpdatedAt,
 		&i.ProviderID,
 		&i.Name,
 		&i.Description,
@@ -94,7 +91,7 @@ func (q *Queries) GetModelByName(ctx context.Context, name string) (Model, error
 }
 
 const listModels = `-- name: ListModels :many
-SELECT id, created_at, updated_at, provider_id, name, description FROM models
+SELECT id, created_at, provider_id, name, description FROM models
 ORDER BY name
 `
 
@@ -110,7 +107,6 @@ func (q *Queries) ListModels(ctx context.Context) ([]Model, error) {
 		if err := rows.Scan(
 			&i.ID,
 			&i.CreatedAt,
-			&i.UpdatedAt,
 			&i.ProviderID,
 			&i.Name,
 			&i.Description,
@@ -129,7 +125,7 @@ func (q *Queries) ListModels(ctx context.Context) ([]Model, error) {
 }
 
 const listModelsByProvider = `-- name: ListModelsByProvider :many
-SELECT id, created_at, updated_at, provider_id, name, description FROM models
+SELECT id, created_at, provider_id, name, description FROM models
 WHERE provider_id = $1
 ORDER BY name
 `
@@ -146,7 +142,6 @@ func (q *Queries) ListModelsByProvider(ctx context.Context, providerID uuid.UUID
 		if err := rows.Scan(
 			&i.ID,
 			&i.CreatedAt,
-			&i.UpdatedAt,
 			&i.ProviderID,
 			&i.Name,
 			&i.Description,

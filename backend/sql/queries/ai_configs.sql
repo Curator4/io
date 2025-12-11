@@ -15,8 +15,12 @@ SELECT * FROM ai_configs
 WHERE name = $1;
 
 -- name: GetAIConfigByID :one
-SELECT * FROM ai_configs
-WHERE id = $1;
+SELECT
+  ac.*,
+  sqlc.embed(m)
+FROM ai_configs ac
+JOIN models m ON ac.model_id = m.id
+WHERE ac.id = $1;
 
 -- name: ListAIConfigs :many
 SELECT * FROM ai_configs

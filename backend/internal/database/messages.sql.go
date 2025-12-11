@@ -8,6 +8,7 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -47,20 +48,35 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 }
 
 const getMessagesByConversation = `-- name: GetMessagesByConversation :many
-SELECT id, created_at, updated_at, conversation_id, user_id, role, content FROM messages
-WHERE conversation_id = $1
-ORDER BY created_at ASC
+SELECT
+  m.id, m.created_at, m.updated_at, m.conversation_id, m.user_id, m.role, m.content,
+  u.id, u.created_at, u.updated_at, u.name
+FROM messages m
+LEFT JOIN users u ON m.user_id = u.id
+WHERE m.conversation_id = $1
+ORDER BY m.created_at ASC
 `
 
-func (q *Queries) GetMessagesByConversation(ctx context.Context, conversationID uuid.UUID) ([]Message, error) {
+type GetMessagesByConversationRow struct {
+	ID             uuid.UUID
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	ConversationID uuid.UUID
+	UserID         uuid.NullUUID
+	Role           string
+	Content        json.RawMessage
+	User           User
+}
+
+func (q *Queries) GetMessagesByConversation(ctx context.Context, conversationID uuid.UUID) ([]GetMessagesByConversationRow, error) {
 	rows, err := q.db.QueryContext(ctx, getMessagesByConversation, conversationID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Message
+	var items []GetMessagesByConversationRow
 	for rows.Next() {
-		var i Message
+		var i GetMessagesByConversationRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.CreatedAt,
@@ -69,6 +85,10 @@ func (q *Queries) GetMessagesByConversation(ctx context.Context, conversationID 
 			&i.UserID,
 			&i.Role,
 			&i.Content,
+			&i.User.ID,
+			&i.User.CreatedAt,
+			&i.User.UpdatedAt,
+			&i.User.Name,
 		); err != nil {
 			return nil, err
 		}

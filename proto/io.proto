@@ -14,12 +14,23 @@ message User {
   google.protobuf.Timestamp updated_at = 4;
 }
 
+message MediaItem {
+  string type = 1;      // "image", "video", "file", "audio"
+  string url = 2;
+  string file_name = 3;
+}
+
+message MessageContent {
+  string text = 1;
+  repeated MediaItem media = 2;
+}
+
 message Message {
   string id = 1;
   string conversation_id = 2;
   string user_id = 3; // null for assistant messages
   string role = 4; // "user", "assistant", "system"
-  string content = 5;
+  MessageContent content = 5;
   google.protobuf.Timestamp created_at = 6;
 }
 
@@ -43,7 +54,6 @@ message Model {
   string name = 3;
   string description = 4;
   google.protobuf.Timestamp created_at = 5;
-  google.protobuf.Timestamp updated_at = 6;
 }
 
 message AIConfig {
@@ -58,7 +68,7 @@ message AIConfig {
 
 // Request/Response messages
 message SendMessageRequest {
-  string content = 1;
+  MessageContent content = 1;
   string user_id = 2;
   string role = 3; // "user", "assistant", "system"
   string conversation_id = 4; // Optional - specify which conversation to use

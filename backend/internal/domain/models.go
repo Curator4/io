@@ -6,6 +6,28 @@ import (
 	"github.com/google/uuid"
 )
 
+type Role string
+
+const (
+	RoleUser      Role = "user"
+	RoleAssistant Role = "assistant"
+	RoleSystem    Role = "system"
+	RoleDeveloper Role = "developer"
+)
+
+// MediaItem represents a single media attachment (image, video, file, etc.)
+type MediaItem struct {
+	Type     string `json:"type"`                // "image", "video", "file", "audio"
+	URL      string `json:"url"`                 // URL to the media
+	FileName string `json:"file_name,omitempty"` // Original filename if applicable
+}
+
+// MessageContent represents the content of a message, supporting text and multiple media attachments
+type MessageContent struct {
+	Text  string      `json:"text,omitempty"`
+	Media []MediaItem `json:"media,omitempty"`
+}
+
 // User represents a user in the system
 type User struct {
 	ID        uuid.UUID
@@ -27,9 +49,9 @@ type Conversation struct {
 type Message struct {
 	ID             uuid.UUID
 	ConversationID uuid.UUID
-	UserID         *uuid.UUID // nil for assistant messages
-	Role           string     // "user", "assistant", "system"
-	Content        string
+	User           *User // Full user object (nil for assistant messages)
+	Role           Role  // "user", "assistant", "system"
+	Content        MessageContent
 	CreatedAt      time.Time
 }
 
@@ -48,14 +70,13 @@ type Model struct {
 	Name        string
 	Description string
 	CreatedAt   time.Time
-	UpdatedAt   time.Time
 }
 
 // AIConfig represents an AI configuration
 type AIConfig struct {
 	ID           uuid.UUID
 	Name         string
-	ModelID      uuid.UUID
+	Model        Model // Full model object instead of just ID
 	SystemPrompt string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time

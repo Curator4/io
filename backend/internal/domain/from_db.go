@@ -30,20 +30,26 @@ func ConversationFromDB(c database.Conversation) Conversation {
 	}
 }
 
-// MessageFromDB converts a database Message to domain Message
-func MessageFromDB(m database.Message) Message {
-	// Content is stored as JSONB, extract the string value
-	var content string
-	// Ignore unmarshal errors - if content is invalid JSON, use empty string
-	_ = json.Unmarshal(m.Content, &content)
+// MessageFromDB converts a database query result to domain Message
+func MessageFromDB(row database.GetMessagesByConversationRow) Message {
+	// Content is stored as JSONB
+	var content MessageContent
+	// Ignore unmarshal errors - if content is invalid JSON, use empty content
+	_ = json.Unmarshal(row.Content, &content)
+
+	var user *User
+	if row.User.ID != uuid.Nil {
+		u := UserFromDB(row.User)
+		user = &u
+	}
 
 	return Message{
-		ID:             m.ID,
-		ConversationID: m.ConversationID,
-		UserID:         uuidNullUUIDToPtr(m.UserID),
-		Role:           m.Role,
+		ID:             row.ID,
+		ConversationID: row.ConversationID,
+		User:           user,
+		Role:           Role(row.Role),
 		Content:        content,
-		CreatedAt:      m.CreatedAt,
+		CreatedAt:      row.CreatedAt,
 	}
 }
 
@@ -69,16 +75,16 @@ func ModelFromDB(m database.Model) Model {
 	}
 }
 
-// AIConfigFromDB converts a database AiConfig to domain AIConfig
-func AIConfigFromDB(a database.AiConfig) AIConfig {
+// AIConfigFromDB converts a database query result to domain AIConfig
+func AIConfigFromDB(row database.GetAIConfigByIDRow) AIConfig {
 	return AIConfig{
-		ID:           a.ID,
-		Name:         a.Name,
-		ModelID:      a.ModelID,
-		SystemPrompt: sqlNullStringToString(a.SystemPrompt),
-		CreatedAt:    a.CreatedAt,
-		UpdatedAt:    a.UpdatedAt,
-		LastUsedAt:   sqlNullTimeToPtr(a.LastUsedAt),
+		ID:           row.ID,
+		Name:         row.Name,
+		Model:        ModelFromDB(row.Model),
+		SystemPrompt: sqlNullStringToString(row.SystemPrompt),
+		CreatedAt:    row.CreatedAt,
+		UpdatedAt:    row.UpdatedAt,
+		LastUsedAt:   sqlNullTimeToPtr(row.LastUsedAt),
 	}
 }
 

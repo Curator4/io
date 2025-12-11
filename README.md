@@ -58,3 +58,5 @@ Personal AI assistant with multi-frontend support and centralized Go backend.
 - [ ] Reaction handling
 - [ ] Discord.js utilities
 - [ ] Memory management
+
+cool orchestrator pattern from anthropic here: https://www.anthropic.com/engineering/building-effective-agents?ref=chris.sotherden.io 

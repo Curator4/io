@@ -15,6 +15,7 @@ migrate-status:
 	goose -dir ./backend/sql/schema postgres "$(DATABASE_URL)" status
 
 # protobuf
+.PHONY: proto
 proto:
 	mkdir -p backend/internal/proto
 	protoc -I=proto \
