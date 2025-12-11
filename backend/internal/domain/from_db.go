@@ -97,13 +97,6 @@ func ConversationParticipantFromDB(cp database.ConversationParticipant) Conversa
 }
 
 // Helper functions for nullable types
-func uuidNullUUIDToPtr(u uuid.NullUUID) *uuid.UUID {
-	if !u.Valid {
-		return nil
-	}
-	return &u.UUID
-}
-
 func sqlNullTimeToPtr(t sql.NullTime) *time.Time {
 	if !t.Valid {
 		return nil

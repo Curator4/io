@@ -95,13 +95,6 @@ func ConversationParticipantToDB(cp ConversationParticipant) database.Conversati
 }
 
 // Helper functions for nullable types
-func ptrToUuidNullUUID(u *uuid.UUID) uuid.NullUUID {
-	if u == nil {
-		return uuid.NullUUID{Valid: false}
-	}
-	return uuid.NullUUID{UUID: *u, Valid: true}
-}
-
 func ptrToSqlNullTime(t *time.Time) sql.NullTime {
 	if t == nil {
 		return sql.NullTime{Valid: false}
