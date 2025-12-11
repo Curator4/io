@@ -59,7 +59,7 @@ message Model {
 message AIConfig {
   string id = 1;
   string name = 2;
-  string model_id = 3;
+  Model model = 3;
   string system_prompt = 4;
   google.protobuf.Timestamp created_at = 5;
   google.protobuf.Timestamp updated_at = 6;

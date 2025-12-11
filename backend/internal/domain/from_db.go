@@ -71,7 +71,6 @@ func ModelFromDB(m database.Model) Model {
 		Name:        m.Name,
 		Description: sqlNullStringToString(m.Description),
 		CreatedAt:   m.CreatedAt,
-		UpdatedAt:   m.UpdatedAt,
 	}
 }
 

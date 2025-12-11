@@ -84,7 +84,7 @@ func AIConfigToPb(a AIConfig) *pb.AIConfig {
 	config := &pb.AIConfig{
 		Id:           a.ID.String(),
 		Name:         a.Name,
-		ModelId:      a.ModelID.String(),
+		Model:        ModelToPb(a.Model),
 		SystemPrompt: a.SystemPrompt,
 		CreatedAt:    timestamppb.New(a.CreatedAt),
 		UpdatedAt:    timestamppb.New(a.UpdatedAt),

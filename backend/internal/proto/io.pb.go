@@ -503,7 +503,7 @@ type AIConfig struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	ModelId       string                 `protobuf:"bytes,3,opt,name=model_id,json=modelId,proto3" json:"model_id,omitempty"`
+	Model         *Model                 `protobuf:"bytes,3,opt,name=model,proto3" json:"model,omitempty"`
 	SystemPrompt  string                 `protobuf:"bytes,4,opt,name=system_prompt,json=systemPrompt,proto3" json:"system_prompt,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
@@ -556,11 +556,11 @@ func (x *AIConfig) GetName() string {
 	return ""
 }
 
-func (x *AIConfig) GetModelId() string {
+func (x *AIConfig) GetModel() *Model {
 	if x != nil {
-		return x.ModelId
+		return x.Model
 	}
-	return ""
+	return nil
 }
 
 func (x *AIConfig) GetSystemPrompt() string {
@@ -1320,11 +1320,11 @@ const file_io_proto_rawDesc = "" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x129\n" +
 	"\n" +
-	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xa2\x02\n" +
+	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xa8\x02\n" +
 	"\bAIConfig\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x19\n" +
-	"\bmodel_id\x18\x03 \x01(\tR\amodelId\x12#\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
+	"\x05model\x18\x03 \x01(\v2\t.io.ModelR\x05model\x12#\n" +
 	"\rsystem_prompt\x18\x04 \x01(\tR\fsystemPrompt\x129\n" +
 	"\n" +
 	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
@@ -1426,37 +1426,38 @@ var file_io_proto_depIdxs = []int32{
 	22, // 7: io.Provider.created_at:type_name -> google.protobuf.Timestamp
 	22, // 8: io.Provider.updated_at:type_name -> google.protobuf.Timestamp
 	22, // 9: io.Model.created_at:type_name -> google.protobuf.Timestamp
-	22, // 10: io.AIConfig.created_at:type_name -> google.protobuf.Timestamp
-	22, // 11: io.AIConfig.updated_at:type_name -> google.protobuf.Timestamp
-	22, // 12: io.AIConfig.last_used_at:type_name -> google.protobuf.Timestamp
-	2,  // 13: io.SendMessageRequest.content:type_name -> io.MessageContent
-	3,  // 14: io.SendMessageResponse.user_message:type_name -> io.Message
-	3,  // 15: io.SendMessageResponse.assistant_message:type_name -> io.Message
-	4,  // 16: io.ListConversationsResponse.conversations:type_name -> io.Conversation
-	4,  // 17: io.LoadConversationResponse.conversation:type_name -> io.Conversation
-	3,  // 18: io.LoadConversationResponse.messages:type_name -> io.Message
-	7,  // 19: io.ListAIConfigsResponse.configs:type_name -> io.AIConfig
-	7,  // 20: io.SwitchAIConfigResponse.config:type_name -> io.AIConfig
-	5,  // 21: io.ListProvidersResponse.providers:type_name -> io.Provider
-	8,  // 22: io.IOService.SendMessage:input_type -> io.SendMessageRequest
-	10, // 23: io.IOService.ListConversations:input_type -> io.ListConversationsRequest
-	12, // 24: io.IOService.LoadConversation:input_type -> io.LoadConversationRequest
-	14, // 25: io.IOService.DeleteConversation:input_type -> io.DeleteConversationRequest
-	16, // 26: io.IOService.ListAIConfigs:input_type -> io.ListAIConfigsRequest
-	18, // 27: io.IOService.SwitchAIConfig:input_type -> io.SwitchAIConfigRequest
-	20, // 28: io.IOService.ListProviders:input_type -> io.ListProvidersRequest
-	9,  // 29: io.IOService.SendMessage:output_type -> io.SendMessageResponse
-	11, // 30: io.IOService.ListConversations:output_type -> io.ListConversationsResponse
-	13, // 31: io.IOService.LoadConversation:output_type -> io.LoadConversationResponse
-	15, // 32: io.IOService.DeleteConversation:output_type -> io.DeleteConversationResponse
-	17, // 33: io.IOService.ListAIConfigs:output_type -> io.ListAIConfigsResponse
-	19, // 34: io.IOService.SwitchAIConfig:output_type -> io.SwitchAIConfigResponse
-	21, // 35: io.IOService.ListProviders:output_type -> io.ListProvidersResponse
-	29, // [29:36] is the sub-list for method output_type
-	22, // [22:29] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	6,  // 10: io.AIConfig.model:type_name -> io.Model
+	22, // 11: io.AIConfig.created_at:type_name -> google.protobuf.Timestamp
+	22, // 12: io.AIConfig.updated_at:type_name -> google.protobuf.Timestamp
+	22, // 13: io.AIConfig.last_used_at:type_name -> google.protobuf.Timestamp
+	2,  // 14: io.SendMessageRequest.content:type_name -> io.MessageContent
+	3,  // 15: io.SendMessageResponse.user_message:type_name -> io.Message
+	3,  // 16: io.SendMessageResponse.assistant_message:type_name -> io.Message
+	4,  // 17: io.ListConversationsResponse.conversations:type_name -> io.Conversation
+	4,  // 18: io.LoadConversationResponse.conversation:type_name -> io.Conversation
+	3,  // 19: io.LoadConversationResponse.messages:type_name -> io.Message
+	7,  // 20: io.ListAIConfigsResponse.configs:type_name -> io.AIConfig
+	7,  // 21: io.SwitchAIConfigResponse.config:type_name -> io.AIConfig
+	5,  // 22: io.ListProvidersResponse.providers:type_name -> io.Provider
+	8,  // 23: io.IOService.SendMessage:input_type -> io.SendMessageRequest
+	10, // 24: io.IOService.ListConversations:input_type -> io.ListConversationsRequest
+	12, // 25: io.IOService.LoadConversation:input_type -> io.LoadConversationRequest
+	14, // 26: io.IOService.DeleteConversation:input_type -> io.DeleteConversationRequest
+	16, // 27: io.IOService.ListAIConfigs:input_type -> io.ListAIConfigsRequest
+	18, // 28: io.IOService.SwitchAIConfig:input_type -> io.SwitchAIConfigRequest
+	20, // 29: io.IOService.ListProviders:input_type -> io.ListProvidersRequest
+	9,  // 30: io.IOService.SendMessage:output_type -> io.SendMessageResponse
+	11, // 31: io.IOService.ListConversations:output_type -> io.ListConversationsResponse
+	13, // 32: io.IOService.LoadConversation:output_type -> io.LoadConversationResponse
+	15, // 33: io.IOService.DeleteConversation:output_type -> io.DeleteConversationResponse
+	17, // 34: io.IOService.ListAIConfigs:output_type -> io.ListAIConfigsResponse
+	19, // 35: io.IOService.SwitchAIConfig:output_type -> io.SwitchAIConfigResponse
+	21, // 36: io.IOService.ListProviders:output_type -> io.ListProvidersResponse
+	30, // [30:37] is the sub-list for method output_type
+	23, // [23:30] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_io_proto_init() }

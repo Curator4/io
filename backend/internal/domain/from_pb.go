@@ -87,7 +87,7 @@ func AIConfigFromPb(a *pb.AIConfig) AIConfig {
 	config := AIConfig{
 		ID:           uuid.MustParse(a.Id),
 		Name:         a.Name,
-		ModelID:      uuid.MustParse(a.ModelId),
+		Model:        ModelFromPb(a.Model),
 		SystemPrompt: a.SystemPrompt,
 		CreatedAt:    a.CreatedAt.AsTime(),
 		UpdatedAt:    a.UpdatedAt.AsTime(),
