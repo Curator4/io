@@ -1,32 +1,45 @@
 services:
   db:
-    image: postgres:15
+    image: postgres:15-alpine
     restart: unless-stopped
-    env_file: .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "${POSTGRES_PORT}:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
+
   backend:
     build: ./backend/
-    ports:
-      - "50051:50051"
-    env_file: .env
-    environment:
-      DATABASE_URL: ${DATABASE_URL_DOCKER}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL_DOCKER}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    expose:
+      - "50051"
+    # ports:                // using expose instead is better for microservices/grpc,
+    #   - "50051:50051"     // not reachable outside docker network
+
+  discord:
+    build: ./discord/
     restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      GRPC_HOST: backend
+      GRPC_PORT: 50051
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+
 volumes:
   db-data:
