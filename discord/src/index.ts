@@ -1,7 +1,15 @@
 import { Client, GatewayIntentBits, Events, Partials } from 'discord.js';
+import { GrpcClient } from './grpc/client';
+import { handleMessage } from './handlers/message';
 
+// grpc client, see ./grpc/client
+const grpcHost = process.env.GRPC_HOST || 'localhost';
+const grpcPort = parseInt(process.env.GRPC_PORT || '50051');
+const grpcClient = new GrpcClient(grpcHost, grpcPort);
+
+// discord client
 const token = process.env.DISCORD_TOKEN;
-const client = new Client({
+const discordClient = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
@@ -11,16 +19,15 @@ const client = new Client({
   partials: [Partials.Channel, Partials.Message],
 });
 
-client.once(Events.ClientReady, (readyClient) => {
+// rdy message on client init
+discordClient.once(Events.ClientReady, (readyClient) => {
   console.log(`ready, logged in as ${readyClient.user.tag}`);
 });
 
-client.on(Events.MessageCreate, async (message) => {
-  if (message.author.bot) return;
-
-  if (message.content === 'ping') {
-    await message.reply('pong');
-  }
+// message events
+discordClient.on(Events.MessageCreate, async (message) => {
+  await handleMessage(message, grpcClient);
 });
 
-client.login(token);
+// login with token
+discordClient.login(token);
