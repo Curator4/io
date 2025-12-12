@@ -1,0 +1,37 @@
+name: discord CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: build & checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: discord/package-lock.json
+
+      - name: install dependencies
+        working-directory: ./discord
+        run: npm ci
+
+      - name: type check
+        working-directory: ./discord
+        run: npx tsc --noEmit
+
+      - name: build
+        working-directory: ./discord
+        run: npm run build
+
+      - name: lint
+        working-directory: ./discord
+        run: npm run lint
+
+      - name: format check
+        working-directory: ./discord
+        run: npm run format -- --check
