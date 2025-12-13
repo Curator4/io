@@ -68,7 +68,7 @@ func ProviderFromDB(p database.Provider) Provider {
 func ModelFromDB(m database.Model) Model {
 	return Model{
 		ID:          m.ID,
-		ProviderID:  m.ProviderID,
+		Provider:    Provider{ID: m.ProviderID}, // Partial provider
 		Name:        m.Name,
 		Description: sqlNullStringToString(m.Description),
 		CreatedAt:   m.CreatedAt,
