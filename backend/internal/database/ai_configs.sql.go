@@ -60,9 +60,11 @@ func (q *Queries) DeleteAIConfig(ctx context.Context, id uuid.UUID) error {
 const getAIConfigByID = `-- name: GetAIConfigByID :one
 SELECT
   ac.id, ac.created_at, ac.updated_at, ac.last_used_at, ac.name, ac.model_id, ac.system_prompt,
-  m.id, m.created_at, m.provider_id, m.name, m.description
+  m.id, m.created_at, m.provider_id, m.name, m.description,
+  p.id, p.created_at, p.updated_at, p.name
 FROM ai_configs ac
 JOIN models m ON ac.model_id = m.id
+JOIN providers p ON m.provider_id = p.id
 WHERE ac.id = $1
 `
 
@@ -75,6 +77,7 @@ type GetAIConfigByIDRow struct {
 	ModelID      uuid.UUID
 	SystemPrompt sql.NullString
 	Model        Model
+	Provider     Provider
 }
 
 func (q *Queries) GetAIConfigByID(ctx context.Context, id uuid.UUID) (GetAIConfigByIDRow, error) {
@@ -93,6 +96,10 @@ func (q *Queries) GetAIConfigByID(ctx context.Context, id uuid.UUID) (GetAIConfi
 		&i.Model.ProviderID,
 		&i.Model.Name,
 		&i.Model.Description,
+		&i.Provider.ID,
+		&i.Provider.CreatedAt,
+		&i.Provider.UpdatedAt,
+		&i.Provider.Name,
 	)
 	return i, err
 }

@@ -38,11 +38,12 @@ type User struct {
 
 // Conversation represents a chat conversation
 type Conversation struct {
-	ID         uuid.UUID
-	Name       string
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-	LastUsedAt *time.Time
+	ID           uuid.UUID
+	Name         string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	LastUsedAt   *time.Time
+	Participants []ConversationParticipant
 }
 
 // Message represents a chat message
@@ -66,7 +67,7 @@ type Provider struct {
 // Model represents an AI model
 type Model struct {
 	ID          uuid.UUID
-	ProviderID  uuid.UUID
+	Provider    Provider // Full provider object
 	Name        string
 	Description string
 	CreatedAt   time.Time

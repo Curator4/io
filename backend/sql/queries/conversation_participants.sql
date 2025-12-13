@@ -7,8 +7,11 @@ DELETE FROM conversation_participants
 WHERE conversation_id = $1 AND user_id = $2;
 
 -- name: GetConversationParticipants :many
-SELECT u.* FROM users u
-JOIN conversation_participants cp ON u.id = cp.user_id
+SELECT
+	cp.conversation_id,
+	cp.user_id,
+	cp.joined_at
+FROM conversation_participants cp
 WHERE cp.conversation_id = $1;
 
 -- name: GetUserConversations :many

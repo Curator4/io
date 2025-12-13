@@ -22,11 +22,12 @@ func UserFromDB(u database.User) User {
 // ConversationFromDB converts a database Conversation to domain Conversation
 func ConversationFromDB(c database.Conversation) Conversation {
 	return Conversation{
-		ID:         c.ID,
-		Name:       sqlNullStringToString(c.Name),
-		CreatedAt:  c.CreatedAt,
-		UpdatedAt:  c.UpdatedAt,
-		LastUsedAt: sqlNullTimeToPtr(c.LastUsedAt),
+		ID:           c.ID,
+		Name:         sqlNullStringToString(c.Name),
+		CreatedAt:    c.CreatedAt,
+		UpdatedAt:    c.UpdatedAt,
+		LastUsedAt:   sqlNullTimeToPtr(c.LastUsedAt),
+		Participants: []ConversationParticipant{}, // Initialize empty, load separately if needed
 	}
 }
 
@@ -76,10 +77,19 @@ func ModelFromDB(m database.Model) Model {
 
 // AIConfigFromDB converts a database query result to domain AIConfig
 func AIConfigFromDB(row database.GetAIConfigByIDRow) AIConfig {
+	// Construct model with embedded provider
+	model := Model{
+		ID:          row.Model.ID,
+		Provider:    ProviderFromDB(row.Provider),
+		Name:        row.Model.Name,
+		Description: sqlNullStringToString(row.Model.Description),
+		CreatedAt:   row.Model.CreatedAt,
+	}
+
 	return AIConfig{
 		ID:           row.ID,
 		Name:         row.Name,
-		Model:        ModelFromDB(row.Model),
+		Model:        model,
 		SystemPrompt: sqlNullStringToString(row.SystemPrompt),
 		CreatedAt:    row.CreatedAt,
 		UpdatedAt:    row.UpdatedAt,

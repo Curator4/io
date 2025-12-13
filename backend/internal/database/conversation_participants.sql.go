@@ -27,26 +27,24 @@ func (q *Queries) AddParticipant(ctx context.Context, arg AddParticipantParams) 
 }
 
 const getConversationParticipants = `-- name: GetConversationParticipants :many
-SELECT u.id, u.created_at, u.updated_at, u.name FROM users u
-JOIN conversation_participants cp ON u.id = cp.user_id
+SELECT
+	cp.conversation_id,
+	cp.user_id,
+	cp.joined_at
+FROM conversation_participants cp
 WHERE cp.conversation_id = $1
 `
 
-func (q *Queries) GetConversationParticipants(ctx context.Context, conversationID uuid.UUID) ([]User, error) {
+func (q *Queries) GetConversationParticipants(ctx context.Context, conversationID uuid.UUID) ([]ConversationParticipant, error) {
 	rows, err := q.db.QueryContext(ctx, getConversationParticipants, conversationID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []User
+	var items []ConversationParticipant
 	for rows.Next() {
-		var i User
-		if err := rows.Scan(
-			&i.ID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.Name,
-		); err != nil {
+		var i ConversationParticipant
+		if err := rows.Scan(&i.ConversationID, &i.UserID, &i.JoinedAt); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

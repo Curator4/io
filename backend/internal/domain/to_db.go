@@ -65,7 +65,7 @@ func ProviderToDB(p Provider) database.Provider {
 func ModelToDB(m Model) database.Model {
 	return database.Model{
 		ID:          m.ID,
-		ProviderID:  m.ProviderID,
+		ProviderID:  m.Provider.ID,
 		Name:        m.Name,
 		Description: stringToSqlNullString(m.Description),
 		CreatedAt:   m.CreatedAt,

@@ -14,26 +14,33 @@ import (
 )
 
 const createMessage = `-- name: CreateMessage :one
-INSERT INTO messages (id, created_at, updated_at, conversation_id, role, content)
+INSERT INTO messages (id, created_at, updated_at, conversation_id, user_id, role, content)
 VALUES (
   gen_random_uuid(),
   NOW(),
   NOW(),
   $1,
   $2,
-  $3
+  $3,
+  $4
 )
 RETURNING id, created_at, updated_at, conversation_id, user_id, role, content
 `
 
 type CreateMessageParams struct {
 	ConversationID uuid.UUID
+	UserID         uuid.NullUUID
 	Role           string
 	Content        json.RawMessage
 }
 
 func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (Message, error) {
-	row := q.db.QueryRowContext(ctx, createMessage, arg.ConversationID, arg.Role, arg.Content)
+	row := q.db.QueryRowContext(ctx, createMessage,
+		arg.ConversationID,
+		arg.UserID,
+		arg.Role,
+		arg.Content,
+	)
 	var i Message
 	err := row.Scan(
 		&i.ID,

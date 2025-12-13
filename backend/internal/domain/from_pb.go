@@ -5,6 +5,31 @@ import (
 	"github.com/google/uuid"
 )
 
+// MessageContentFromPb converts protobuf MessageContent to domain MessageContent
+func MessageContentFromPb(c *pb.MessageContent) MessageContent {
+	if c == nil {
+		return MessageContent{}
+	}
+
+	content := MessageContent{
+		Text: c.Text,
+	}
+
+	// Convert media items
+	if len(c.Media) > 0 {
+		content.Media = make([]MediaItem, len(c.Media))
+		for i, item := range c.Media {
+			content.Media[i] = MediaItem{
+				Type:     item.Type,
+				URL:      item.Url,
+				FileName: item.FileName,
+			}
+		}
+	}
+
+	return content
+}
+
 // UserFromPb converts a protobuf User to domain User
 func UserFromPb(u *pb.User) User {
 	return User{
@@ -28,28 +53,11 @@ func ConversationFromPb(c *pb.Conversation) Conversation {
 
 // MessageFromPb converts a protobuf Message to domain Message
 func MessageFromPb(m *pb.Message) Message {
-	var content MessageContent
-	if m.Content != nil {
-		content.Text = m.Content.Text
-
-		// Convert media items
-		if len(m.Content.Media) > 0 {
-			content.Media = make([]MediaItem, len(m.Content.Media))
-			for i, item := range m.Content.Media {
-				content.Media[i] = MediaItem{
-					Type:     item.Type,
-					URL:      item.Url,
-					FileName: item.FileName,
-				}
-			}
-		}
-	}
-
 	msg := Message{
 		ID:             uuid.MustParse(m.Id),
 		ConversationID: uuid.MustParse(m.ConversationId),
 		Role:           Role(m.Role),
-		Content:        content,
+		Content:        MessageContentFromPb(m.Content),
 		CreatedAt:      m.CreatedAt.AsTime(),
 	}
 
@@ -74,9 +82,9 @@ func ProviderFromPb(p *pb.Provider) Provider {
 // ModelFromPb converts a protobuf Model to domain Model
 func ModelFromPb(m *pb.Model) Model {
 	return Model{
-		ID:          uuid.MustParse(m.Id),
-		ProviderID:  uuid.MustParse(m.ProviderId),
-		Name:        m.Name,
+		ID:       uuid.MustParse(m.Id),
+		Provider: Provider{ID: uuid.MustParse(m.ProviderId)}, // Partial provider
+		Name:     m.Name,
 		Description: m.Description,
 		CreatedAt:   m.CreatedAt.AsTime(),
 	}

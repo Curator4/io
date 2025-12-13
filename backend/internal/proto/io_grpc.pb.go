@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	IOService_SendMessage_FullMethodName        = "/io.IOService/SendMessage"
+	IOService_StoreMessage_FullMethodName       = "/io.IOService/StoreMessage"
 	IOService_ListConversations_FullMethodName  = "/io.IOService/ListConversations"
 	IOService_LoadConversation_FullMethodName   = "/io.IOService/LoadConversation"
 	IOService_DeleteConversation_FullMethodName = "/io.IOService/DeleteConversation"
@@ -36,6 +37,8 @@ const (
 type IOServiceClient interface {
 	// Send a message and get AI response
 	SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*SendMessageResponse, error)
+	// Send message to backend only for storage
+	StoreMessage(ctx context.Context, in *StoreMessageRequest, opts ...grpc.CallOption) (*StoreMessageResponse, error)
 	// Conversation management
 	ListConversations(ctx context.Context, in *ListConversationsRequest, opts ...grpc.CallOption) (*ListConversationsResponse, error)
 	LoadConversation(ctx context.Context, in *LoadConversationRequest, opts ...grpc.CallOption) (*LoadConversationResponse, error)
@@ -59,6 +62,16 @@ func (c *iOServiceClient) SendMessage(ctx context.Context, in *SendMessageReques
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SendMessageResponse)
 	err := c.cc.Invoke(ctx, IOService_SendMessage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *iOServiceClient) StoreMessage(ctx context.Context, in *StoreMessageRequest, opts ...grpc.CallOption) (*StoreMessageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StoreMessageResponse)
+	err := c.cc.Invoke(ctx, IOService_StoreMessage_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -133,6 +146,8 @@ func (c *iOServiceClient) ListProviders(ctx context.Context, in *ListProvidersRe
 type IOServiceServer interface {
 	// Send a message and get AI response
 	SendMessage(context.Context, *SendMessageRequest) (*SendMessageResponse, error)
+	// Send message to backend only for storage
+	StoreMessage(context.Context, *StoreMessageRequest) (*StoreMessageResponse, error)
 	// Conversation management
 	ListConversations(context.Context, *ListConversationsRequest) (*ListConversationsResponse, error)
 	LoadConversation(context.Context, *LoadConversationRequest) (*LoadConversationResponse, error)
@@ -154,6 +169,9 @@ type UnimplementedIOServiceServer struct{}
 
 func (UnimplementedIOServiceServer) SendMessage(context.Context, *SendMessageRequest) (*SendMessageResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SendMessage not implemented")
+}
+func (UnimplementedIOServiceServer) StoreMessage(context.Context, *StoreMessageRequest) (*StoreMessageResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method StoreMessage not implemented")
 }
 func (UnimplementedIOServiceServer) ListConversations(context.Context, *ListConversationsRequest) (*ListConversationsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListConversations not implemented")
@@ -208,6 +226,24 @@ func _IOService_SendMessage_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IOServiceServer).SendMessage(ctx, req.(*SendMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IOService_StoreMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StoreMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IOServiceServer).StoreMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IOService_StoreMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IOServiceServer).StoreMessage(ctx, req.(*StoreMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -330,6 +366,10 @@ var IOService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendMessage",
 			Handler:    _IOService_SendMessage_Handler,
+		},
+		{
+			MethodName: "StoreMessage",
+			Handler:    _IOService_StoreMessage_Handler,
 		},
 		{
 			MethodName: "ListConversations",

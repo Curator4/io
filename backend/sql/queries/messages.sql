@@ -1,12 +1,13 @@
 -- name: CreateMessage :one
-INSERT INTO messages (id, created_at, updated_at, conversation_id, role, content)
+INSERT INTO messages (id, created_at, updated_at, conversation_id, user_id, role, content)
 VALUES (
   gen_random_uuid(),
   NOW(),
   NOW(),
   $1,
   $2,
-  $3
+  $3,
+  $4
 )
 RETURNING *;
 

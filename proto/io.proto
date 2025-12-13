@@ -69,15 +69,20 @@ message AIConfig {
 // Request/Response messages
 message SendMessageRequest {
   MessageContent content = 1;
-  string user_id = 2;
-  string role = 3; // "user", "assistant", "system"
-  string conversation_id = 4; // Optional - specify which conversation to use
+  string username = 2;
 }
 
 message SendMessageResponse {
-  Message user_message = 1; // The message that was sent
-  Message assistant_message = 2; // The AI's response
-  string conversation_id = 3;
+  MessageContent content = 1; // The AI's response
+}
+
+message StoreMessageRequest {
+  MessageContent content = 1;
+  string username = 2;
+}
+
+message StoreMessageResponse {
+  bool success = 1;
 }
 
 message ListConversationsRequest {
@@ -133,6 +138,8 @@ message ListProvidersResponse {
 service IOService {
   // Send a message and get AI response
   rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
+  // Send message to backend only for storage
+  rpc StoreMessage(StoreMessageRequest) returns (StoreMessageResponse);
 
   // Conversation management
   rpc ListConversations(ListConversationsRequest) returns (ListConversationsResponse);

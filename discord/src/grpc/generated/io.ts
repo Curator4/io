@@ -88,21 +88,21 @@ export interface AIConfig {
 /** Request/Response messages */
 export interface SendMessageRequest {
   content: MessageContent | undefined;
-  userId: string;
-  /** "user", "assistant", "system" */
-  role: string;
-  /** Optional - specify which conversation to use */
-  conversationId: string;
+  username: string;
 }
 
 export interface SendMessageResponse {
-  /** The message that was sent */
-  userMessage:
-    | Message
-    | undefined;
   /** The AI's response */
-  assistantMessage: Message | undefined;
-  conversationId: string;
+  content: MessageContent | undefined;
+}
+
+export interface StoreMessageRequest {
+  content: MessageContent | undefined;
+  username: string;
+}
+
+export interface StoreMessageResponse {
+  success: boolean;
 }
 
 export interface ListConversationsRequest {
@@ -1079,7 +1079,7 @@ export const AIConfig: MessageFns<AIConfig> = {
 };
 
 function createBaseSendMessageRequest(): SendMessageRequest {
-  return { content: undefined, userId: "", role: "", conversationId: "" };
+  return { content: undefined, username: "" };
 }
 
 export const SendMessageRequest: MessageFns<SendMessageRequest> = {
@@ -1087,14 +1087,8 @@ export const SendMessageRequest: MessageFns<SendMessageRequest> = {
     if (message.content !== undefined) {
       MessageContent.encode(message.content, writer.uint32(10).fork()).join();
     }
-    if (message.userId !== "") {
-      writer.uint32(18).string(message.userId);
-    }
-    if (message.role !== "") {
-      writer.uint32(26).string(message.role);
-    }
-    if (message.conversationId !== "") {
-      writer.uint32(34).string(message.conversationId);
+    if (message.username !== "") {
+      writer.uint32(18).string(message.username);
     }
     return writer;
   },
@@ -1119,23 +1113,7 @@ export const SendMessageRequest: MessageFns<SendMessageRequest> = {
             break;
           }
 
-          message.userId = reader.string();
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.role = reader.string();
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.conversationId = reader.string();
+          message.username = reader.string();
           continue;
         }
       }
@@ -1150,9 +1128,7 @@ export const SendMessageRequest: MessageFns<SendMessageRequest> = {
   fromJSON(object: any): SendMessageRequest {
     return {
       content: isSet(object.content) ? MessageContent.fromJSON(object.content) : undefined,
-      userId: isSet(object.userId) ? globalThis.String(object.userId) : "",
-      role: isSet(object.role) ? globalThis.String(object.role) : "",
-      conversationId: isSet(object.conversationId) ? globalThis.String(object.conversationId) : "",
+      username: isSet(object.username) ? globalThis.String(object.username) : "",
     };
   },
 
@@ -1161,14 +1137,8 @@ export const SendMessageRequest: MessageFns<SendMessageRequest> = {
     if (message.content !== undefined) {
       obj.content = MessageContent.toJSON(message.content);
     }
-    if (message.userId !== "") {
-      obj.userId = message.userId;
-    }
-    if (message.role !== "") {
-      obj.role = message.role;
-    }
-    if (message.conversationId !== "") {
-      obj.conversationId = message.conversationId;
+    if (message.username !== "") {
+      obj.username = message.username;
     }
     return obj;
   },
@@ -1181,27 +1151,19 @@ export const SendMessageRequest: MessageFns<SendMessageRequest> = {
     message.content = (object.content !== undefined && object.content !== null)
       ? MessageContent.fromPartial(object.content)
       : undefined;
-    message.userId = object.userId ?? "";
-    message.role = object.role ?? "";
-    message.conversationId = object.conversationId ?? "";
+    message.username = object.username ?? "";
     return message;
   },
 };
 
 function createBaseSendMessageResponse(): SendMessageResponse {
-  return { userMessage: undefined, assistantMessage: undefined, conversationId: "" };
+  return { content: undefined };
 }
 
 export const SendMessageResponse: MessageFns<SendMessageResponse> = {
   encode(message: SendMessageResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.userMessage !== undefined) {
-      Message.encode(message.userMessage, writer.uint32(10).fork()).join();
-    }
-    if (message.assistantMessage !== undefined) {
-      Message.encode(message.assistantMessage, writer.uint32(18).fork()).join();
-    }
-    if (message.conversationId !== "") {
-      writer.uint32(26).string(message.conversationId);
+    if (message.content !== undefined) {
+      MessageContent.encode(message.content, writer.uint32(10).fork()).join();
     }
     return writer;
   },
@@ -1218,23 +1180,7 @@ export const SendMessageResponse: MessageFns<SendMessageResponse> = {
             break;
           }
 
-          message.userMessage = Message.decode(reader, reader.uint32());
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.assistantMessage = Message.decode(reader, reader.uint32());
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.conversationId = reader.string();
+          message.content = MessageContent.decode(reader, reader.uint32());
           continue;
         }
       }
@@ -1247,23 +1193,13 @@ export const SendMessageResponse: MessageFns<SendMessageResponse> = {
   },
 
   fromJSON(object: any): SendMessageResponse {
-    return {
-      userMessage: isSet(object.userMessage) ? Message.fromJSON(object.userMessage) : undefined,
-      assistantMessage: isSet(object.assistantMessage) ? Message.fromJSON(object.assistantMessage) : undefined,
-      conversationId: isSet(object.conversationId) ? globalThis.String(object.conversationId) : "",
-    };
+    return { content: isSet(object.content) ? MessageContent.fromJSON(object.content) : undefined };
   },
 
   toJSON(message: SendMessageResponse): unknown {
     const obj: any = {};
-    if (message.userMessage !== undefined) {
-      obj.userMessage = Message.toJSON(message.userMessage);
-    }
-    if (message.assistantMessage !== undefined) {
-      obj.assistantMessage = Message.toJSON(message.assistantMessage);
-    }
-    if (message.conversationId !== "") {
-      obj.conversationId = message.conversationId;
+    if (message.content !== undefined) {
+      obj.content = MessageContent.toJSON(message.content);
     }
     return obj;
   },
@@ -1273,13 +1209,145 @@ export const SendMessageResponse: MessageFns<SendMessageResponse> = {
   },
   fromPartial<I extends Exact<DeepPartial<SendMessageResponse>, I>>(object: I): SendMessageResponse {
     const message = createBaseSendMessageResponse();
-    message.userMessage = (object.userMessage !== undefined && object.userMessage !== null)
-      ? Message.fromPartial(object.userMessage)
+    message.content = (object.content !== undefined && object.content !== null)
+      ? MessageContent.fromPartial(object.content)
       : undefined;
-    message.assistantMessage = (object.assistantMessage !== undefined && object.assistantMessage !== null)
-      ? Message.fromPartial(object.assistantMessage)
+    return message;
+  },
+};
+
+function createBaseStoreMessageRequest(): StoreMessageRequest {
+  return { content: undefined, username: "" };
+}
+
+export const StoreMessageRequest: MessageFns<StoreMessageRequest> = {
+  encode(message: StoreMessageRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.content !== undefined) {
+      MessageContent.encode(message.content, writer.uint32(10).fork()).join();
+    }
+    if (message.username !== "") {
+      writer.uint32(18).string(message.username);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): StoreMessageRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseStoreMessageRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.content = MessageContent.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.username = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): StoreMessageRequest {
+    return {
+      content: isSet(object.content) ? MessageContent.fromJSON(object.content) : undefined,
+      username: isSet(object.username) ? globalThis.String(object.username) : "",
+    };
+  },
+
+  toJSON(message: StoreMessageRequest): unknown {
+    const obj: any = {};
+    if (message.content !== undefined) {
+      obj.content = MessageContent.toJSON(message.content);
+    }
+    if (message.username !== "") {
+      obj.username = message.username;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<StoreMessageRequest>, I>>(base?: I): StoreMessageRequest {
+    return StoreMessageRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<StoreMessageRequest>, I>>(object: I): StoreMessageRequest {
+    const message = createBaseStoreMessageRequest();
+    message.content = (object.content !== undefined && object.content !== null)
+      ? MessageContent.fromPartial(object.content)
       : undefined;
-    message.conversationId = object.conversationId ?? "";
+    message.username = object.username ?? "";
+    return message;
+  },
+};
+
+function createBaseStoreMessageResponse(): StoreMessageResponse {
+  return { success: false };
+}
+
+export const StoreMessageResponse: MessageFns<StoreMessageResponse> = {
+  encode(message: StoreMessageResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.success !== false) {
+      writer.uint32(8).bool(message.success);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): StoreMessageResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseStoreMessageResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.success = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): StoreMessageResponse {
+    return { success: isSet(object.success) ? globalThis.Boolean(object.success) : false };
+  },
+
+  toJSON(message: StoreMessageResponse): unknown {
+    const obj: any = {};
+    if (message.success !== false) {
+      obj.success = message.success;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<StoreMessageResponse>, I>>(base?: I): StoreMessageResponse {
+    return StoreMessageResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<StoreMessageResponse>, I>>(object: I): StoreMessageResponse {
+    const message = createBaseStoreMessageResponse();
+    message.success = object.success ?? false;
     return message;
   },
 };
@@ -2067,6 +2135,17 @@ export const IOServiceService = {
     responseSerialize: (value: SendMessageResponse): Buffer => Buffer.from(SendMessageResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer): SendMessageResponse => SendMessageResponse.decode(value),
   },
+  /** Send message to backend only for storage */
+  storeMessage: {
+    path: "/io.IOService/StoreMessage",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: StoreMessageRequest): Buffer => Buffer.from(StoreMessageRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): StoreMessageRequest => StoreMessageRequest.decode(value),
+    responseSerialize: (value: StoreMessageResponse): Buffer =>
+      Buffer.from(StoreMessageResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): StoreMessageResponse => StoreMessageResponse.decode(value),
+  },
   /** Conversation management */
   listConversations: {
     path: "/io.IOService/ListConversations",
@@ -2139,6 +2218,8 @@ export const IOServiceService = {
 export interface IOServiceServer extends UntypedServiceImplementation {
   /** Send a message and get AI response */
   sendMessage: handleUnaryCall<SendMessageRequest, SendMessageResponse>;
+  /** Send message to backend only for storage */
+  storeMessage: handleUnaryCall<StoreMessageRequest, StoreMessageResponse>;
   /** Conversation management */
   listConversations: handleUnaryCall<ListConversationsRequest, ListConversationsResponse>;
   loadConversation: handleUnaryCall<LoadConversationRequest, LoadConversationResponse>;
@@ -2166,6 +2247,22 @@ export interface IOServiceClient extends Client {
     metadata: Metadata,
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: SendMessageResponse) => void,
+  ): ClientUnaryCall;
+  /** Send message to backend only for storage */
+  storeMessage(
+    request: StoreMessageRequest,
+    callback: (error: ServiceError | null, response: StoreMessageResponse) => void,
+  ): ClientUnaryCall;
+  storeMessage(
+    request: StoreMessageRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: StoreMessageResponse) => void,
+  ): ClientUnaryCall;
+  storeMessage(
+    request: StoreMessageRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: StoreMessageResponse) => void,
   ): ClientUnaryCall;
   /** Conversation management */
   listConversations(

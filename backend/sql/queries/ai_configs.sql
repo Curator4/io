@@ -17,9 +17,11 @@ WHERE name = $1;
 -- name: GetAIConfigByID :one
 SELECT
   ac.*,
-  sqlc.embed(m)
+  sqlc.embed(m),
+  sqlc.embed(p)
 FROM ai_configs ac
 JOIN models m ON ac.model_id = m.id
+JOIN providers p ON m.provider_id = p.id
 WHERE ac.id = $1;
 
 -- name: ListAIConfigs :many

@@ -5,6 +5,27 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// MessageContentToPb converts domain MessageContent to protobuf MessageContent
+func MessageContentToPb(c MessageContent) *pb.MessageContent {
+	content := &pb.MessageContent{
+		Text: c.Text,
+	}
+
+	// Convert media items
+	if len(c.Media) > 0 {
+		content.Media = make([]*pb.MediaItem, len(c.Media))
+		for i, item := range c.Media {
+			content.Media[i] = &pb.MediaItem{
+				Type:     item.Type,
+				Url:      item.URL,
+				FileName: item.FileName,
+			}
+		}
+	}
+
+	return content
+}
+
 // UserToPb converts a domain User to protobuf User
 func UserToPb(u User) *pb.User {
 	return &pb.User{
@@ -27,27 +48,11 @@ func ConversationToPb(c Conversation) *pb.Conversation {
 
 // MessageToPb converts a domain Message to protobuf Message
 func MessageToPb(m Message) *pb.Message {
-	content := &pb.MessageContent{
-		Text: m.Content.Text,
-	}
-
-	// Convert media items
-	if len(m.Content.Media) > 0 {
-		content.Media = make([]*pb.MediaItem, len(m.Content.Media))
-		for i, item := range m.Content.Media {
-			content.Media[i] = &pb.MediaItem{
-				Type:     item.Type,
-				Url:      item.URL,
-				FileName: item.FileName,
-			}
-		}
-	}
-
 	msg := &pb.Message{
 		Id:             m.ID.String(),
 		ConversationId: m.ConversationID.String(),
 		Role:           string(m.Role),
-		Content:        content,
+		Content:        MessageContentToPb(m.Content),
 		CreatedAt:      timestamppb.New(m.CreatedAt),
 	}
 
@@ -72,7 +77,7 @@ func ProviderToPb(p Provider) *pb.Provider {
 func ModelToPb(m Model) *pb.Model {
 	return &pb.Model{
 		Id:          m.ID.String(),
-		ProviderId:  m.ProviderID.String(),
+		ProviderId:  m.Provider.ID.String(),
 		Name:        m.Name,
 		Description: m.Description,
 		CreatedAt:   timestamppb.New(m.CreatedAt),
