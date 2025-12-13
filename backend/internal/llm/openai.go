@@ -33,11 +33,11 @@ var supportedModels = map[string]shared.ResponsesModel{
 	"gpt-5-mini": openai.ChatModelGPT5Mini,
 }
 
-func (p OpenAIProvider) SendMessage(ctx context.Context, messages []domain.Message, config domain.AIConfig) (*domain.Message, error) {
+func (p OpenAIProvider) SendMessage(ctx context.Context, messages []domain.Message, config domain.AIConfig) (domain.MessageContent, error) {
 
 	model, ok := supportedModels[config.Model.Name]
 	if !ok {
-		return nil, fmt.Errorf("unknown or unsupported model: %s", config.Model.Name)
+		return domain.MessageContent{}, fmt.Errorf("unknown or unsupported model: %s", config.Model.Name)
 	}
 
 	input := responses.ResponseNewParamsInputUnion{
@@ -53,20 +53,13 @@ func (p OpenAIProvider) SendMessage(ctx context.Context, messages []domain.Messa
 
 	resp, err := p.client.Responses.New(ctx, params)
 	if err != nil {
-		return nil, fmt.Errorf("openai api error: %w", err)
+		return domain.MessageContent{}, fmt.Errorf("openai api error: %w", err)
 	}
 
-	// Parse the assistant's response
-	assistantMessage := &domain.Message{
-		ID:   uuid.New(),
-		Role: domain.RoleAssistant,
-		Content: domain.MessageContent{
-			Text: resp.OutputText(),
-		},
-		CreatedAt: time.Now(),
-	}
-
-	return assistantMessage, nil
+	// Return the assistant's response content
+	return domain.MessageContent{
+		Text: resp.OutputText(),
+	}, nil
 }
 
 func NewOpenAIClient(apikey string) *openai.Client {
