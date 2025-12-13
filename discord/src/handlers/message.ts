@@ -1,6 +1,6 @@
 import { Message } from 'discord.js';
 import { GrpcClient } from '../grpc/client';
-import { SendMessageRequest } from '../grpc/generated/io';
+import { SendMessageRequest, StoreMessageRequest } from '../grpc/generated/io';
 
 // helpers
 
@@ -15,8 +15,8 @@ const warrantsResponse = (message: Message): boolean => {
   return isDM || isMentioned || startsWithPrefix;
 };
 
-// processMessage handles the remote procedure call to the backend grpc server, and replies to discord
-const processMessage = async (
+// sendMessage calls the sendMessage remote procedure, replies to the message with the response
+const sendMessage = async (
   message: Message,
   grpcClient: GrpcClient,
 ): Promise<void> => {
@@ -25,53 +25,51 @@ const processMessage = async (
     await message.channel.sendTyping();
   }
 
-  // grpc request object
   const request: SendMessageRequest = {
-    content: {
-      text: message.content,
-      media: [],
-    },
-    userId: message.author.id,
-    role: 'user',
-    conversationId: '',
+    content: { text: message.content, media: [] },
+    username: message.author.username,
   };
 
-  // grpc call
   const response = await grpcClient.sendMessage(request);
-
-  // discord reply
-  await message.reply(
-    response.assistantMessage?.content?.text || 'No response',
-  );
+  await message.reply(response.content?.text || 'No response');
 };
+
+// storeMessage calls the storeMessage remote procedure, simply storing the message in database
+const storeMessage = async (
+  message: Message,
+  grpcClient: GrpcClient,
+): Promise<void> => {
+  const request: StoreMessageRequest = {
+    content: { text: message.content, media: [] },
+    username: message.author.username,
+  };
+
+  await grpcClient.storeMessage(request);
+};
+
 
 // exports
 
-// handleMessage is the event handler for all message events
-// TODO: messages should maybe have differenlt handlers depending on context,
-// like DMS should have a prompt that says it a dm not a group chat
+// handleMessage is the main event handler, handles all message events, ie discord messages to server
+// delegates to either sendMessage or storeMessage depending on results of warrantsResponse
 export const handleMessage = async (
   message: Message,
   grpcClient: GrpcClient,
 ): Promise<void> => {
-  // event handling
   try {
-    // check if the message warrants a response
-    if (!warrantsResponse(message)) return;
-    // process the remote procedure call
-    await processMessage(message, grpcClient);
+    if (warrantsResponse(message)) {
+      await sendMessage(message, grpcClient);
+    } else {
+      await storeMessage(message, grpcClient);
+    }
   } catch (error) {
-    console.error('error handling message: ', error);
+    console.error('error handling message:', error);
 
-    // respond to discord with error
-    const errorMessage =
-      error instanceof Error
-        ? `Error: ${error.message}`
-        : 'Unknown error occurred';
+    const errorMessage = error instanceof Error ? `Error: ${error.message}` : `Unknown error occurred`;
     try {
       await message.reply(`failed ❌, ${errorMessage}`);
     } catch (replyError) {
-      console.error('failed to even send error msg to discord, F:', replyError);
+      console.error('failed to send error msg to discord:', replyError);
     }
   }
 };

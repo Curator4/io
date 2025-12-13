@@ -3,6 +3,8 @@ import {
   IOServiceClient,
   SendMessageRequest,
   SendMessageResponse,
+  StoreMessageRequest,
+  StoreMessageResponse,
 } from './generated/io';
 
 export class GrpcClient {
@@ -16,6 +18,15 @@ export class GrpcClient {
   async sendMessage(request: SendMessageRequest): Promise<SendMessageResponse> {
     return new Promise((resolve, reject) => {
       this.client.sendMessage(request, (error, response) => {
+        if (error) reject(error);
+        else resolve(response);
+      });
+    });
+  }
+
+  async storeMessage(request: StoreMessageRequest): Promise<StoreMessageResponse> {
+    return new Promise((resolve, reject) => {
+      this.client.storeMessage(request, (error, response) => {
         if (error) reject(error);
         else resolve(response);
       });
