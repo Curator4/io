@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -73,42 +74,55 @@ func (c *Core) HandleSendMessage(
 	content domain.MessageContent,
 	username string,
 ) (llmMsg domain.Message, err error) {
+	start := time.Now()
+	log.Printf("[TIMING] HandleSendMessage started for user: %s", username)
 
 	// 1-4. prepare and store user message
+	stepStart := time.Now()
 	_, conv, err := c.prepareAndStoreUserMessage(ctx, content, username)
 	if err != nil {
 		return
 	}
+	log.Printf("[TIMING] prepareAndStoreUserMessage: %v", time.Since(stepStart))
 
 	// 5. get conversation history
+	stepStart = time.Now()
 	history, err := c.getConversationHistory(ctx, conv.ID)
 	if err != nil {
 		err = fmt.Errorf("failed to get conversation history: %w", err)
 		return
 	}
+	log.Printf("[TIMING] getConversationHistory: %v", time.Since(stepStart))
 
 	// 6. get active ai config
+	stepStart = time.Now()
 	config, err := c.getActiveConfig(ctx)
 	if err != nil {
 		err = fmt.Errorf("failed to get active config: %w", err)
 		return
 	}
+	log.Printf("[TIMING] getActiveConfig: %v", time.Since(stepStart))
 
 	// 7. get llm provider
+	stepStart = time.Now()
 	provider, ok := c.llmProviders[config.Model.Provider.Name]
 	if !ok {
-		err = fmt.Errorf("unknown provider: %s", config.Model.Provider.Name)
+		err = fmt.Errorf("%w: %s", ErrProviderNotFound, config.Model.Provider.Name)
 		return
 	}
+	log.Printf("[TIMING] get llm provider: %v", time.Since(stepStart))
 
 	// 8. call llm
+	stepStart = time.Now()
 	llmContent, err := provider.SendMessage(ctx, history, *config)
 	if err != nil {
-		err = fmt.Errorf("failed to call llm provider: %w", err)
+		err = fmt.Errorf("%w: %v", ErrLLMUnavailable, err)
 		return
 	}
+	log.Printf("[TIMING] LLM API call: %v", time.Since(stepStart))
 
 	// 9. store assistant message
+	stepStart = time.Now()
 	llmMsg, err = c.storeMessage(ctx,
 		conv.ID,
 		nil,
@@ -119,12 +133,14 @@ func (c *Core) HandleSendMessage(
 		err = fmt.Errorf("failed to store assistant message: %w", err)
 		return
 	}
+	log.Printf("[TIMING] store assistant message: %v", time.Since(stepStart))
 
 	// 10. updated session
 	c.mu.Lock()
 	c.session.LastActivity = time.Now()
 	c.mu.Unlock()
 
+	log.Printf("[TIMING] HandleSendMessage TOTAL: %v", time.Since(start))
 	return
 }
 

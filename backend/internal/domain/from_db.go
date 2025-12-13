@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/curator4/io/backend/internal/database"
-	"github.com/google/uuid"
 )
 
 // UserFromDB converts a database User to domain User
@@ -39,9 +38,13 @@ func MessageFromDB(row database.GetMessagesByConversationRow) Message {
 	_ = json.Unmarshal(row.Content, &content)
 
 	var user *User
-	if row.User.ID != uuid.Nil {
-		u := UserFromDB(row.User)
-		user = &u
+	if row.JoinedUserID.Valid {
+		user = &User{
+			ID:        row.JoinedUserID.UUID,
+			Name:      row.JoinedUserName.String,
+			CreatedAt: row.JoinedUserCreatedAt.Time,
+			UpdatedAt: row.JoinedUserUpdatedAt.Time,
+		}
 	}
 
 	return Message{

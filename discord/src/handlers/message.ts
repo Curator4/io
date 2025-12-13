@@ -7,7 +7,6 @@ import { SendMessageRequest, StoreMessageRequest } from '../grpc/generated/io.js
 // warrantsResponse is a helper that determines whether a message event warrants a response or not
 // TODO: needs more features etc later on, local inferral etc, extra triggers
 const warrantsResponse = (message: Message): boolean => {
-  if (message.author.bot) return false;
   const isDM = message.channel.isDMBased();
   const isMentioned = message.mentions.has(message.client.user!);
   const startsWithPrefix = message.content.toLowerCase().startsWith('io');
@@ -31,7 +30,14 @@ const sendMessage = async (
   };
 
   const response = await grpcClient.sendMessage(request);
-  await message.reply(response.content?.text || 'No response');
+  let text = response.content?.text || 'No response';
+
+  // Discord has a 2000 character limit
+  if (text.length > 2000) {
+    text = text.substring(0, 1997) + '...';
+  }
+
+  await message.reply(text);
 };
 
 // storeMessage calls the storeMessage remote procedure, simply storing the message in database
@@ -56,6 +62,9 @@ export const handleMessage = async (
   message: Message,
   grpcClient: GrpcClient,
 ): Promise<void> => {
+  // Ignore all bot messages (including our own)
+  if (message.author.bot) return;
+
   try {
     if (warrantsResponse(message)) {
       await sendMessage(message, grpcClient);

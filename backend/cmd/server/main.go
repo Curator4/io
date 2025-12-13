@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
@@ -34,7 +35,7 @@ func main() {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
 
-	if err := db.Ping(); err != nil {
+	if err = db.Ping(); err != nil {
 		log.Fatalf("failed to ping database: %v", err)
 	}
 
@@ -53,6 +54,9 @@ func main() {
 
 	// intialize backend core
 	coreInstance := core.NewCore(queries, providers)
+	if err = coreInstance.InitializeDatabase(context.Background()); err != nil {
+		log.Fatal("failed to initialize database with default values")
+	}
 
 	// initialize gRPC server
 	grpcServer := grpc.NewServer()

@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -56,8 +57,17 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 
 const getMessagesByConversation = `-- name: GetMessagesByConversation :many
 SELECT
-  m.id, m.created_at, m.updated_at, m.conversation_id, m.user_id, m.role, m.content,
-  u.id, u.created_at, u.updated_at, u.name
+  m.id,
+  m.created_at,
+  m.updated_at,
+  m.conversation_id,
+  m.user_id,
+  m.role,
+  m.content,
+  u.id as joined_user_id,
+  u.name as joined_user_name,
+  u.created_at as joined_user_created_at,
+  u.updated_at as joined_user_updated_at
 FROM messages m
 LEFT JOIN users u ON m.user_id = u.id
 WHERE m.conversation_id = $1
@@ -65,14 +75,17 @@ ORDER BY m.created_at ASC
 `
 
 type GetMessagesByConversationRow struct {
-	ID             uuid.UUID
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	ConversationID uuid.UUID
-	UserID         uuid.NullUUID
-	Role           string
-	Content        json.RawMessage
-	User           User
+	ID                  uuid.UUID
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	ConversationID      uuid.UUID
+	UserID              uuid.NullUUID
+	Role                string
+	Content             json.RawMessage
+	JoinedUserID        uuid.NullUUID
+	JoinedUserName      sql.NullString
+	JoinedUserCreatedAt sql.NullTime
+	JoinedUserUpdatedAt sql.NullTime
 }
 
 func (q *Queries) GetMessagesByConversation(ctx context.Context, conversationID uuid.UUID) ([]GetMessagesByConversationRow, error) {
@@ -92,10 +105,10 @@ func (q *Queries) GetMessagesByConversation(ctx context.Context, conversationID 
 			&i.UserID,
 			&i.Role,
 			&i.Content,
-			&i.User.ID,
-			&i.User.CreatedAt,
-			&i.User.UpdatedAt,
-			&i.User.Name,
+			&i.JoinedUserID,
+			&i.JoinedUserName,
+			&i.JoinedUserCreatedAt,
+			&i.JoinedUserUpdatedAt,
 		); err != nil {
 			return nil, err
 		}

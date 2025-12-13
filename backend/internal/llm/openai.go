@@ -43,10 +43,12 @@ func (p OpenAIProvider) SendMessage(ctx context.Context, messages []domain.Messa
 	}
 
 	params := responses.ResponseNewParams{
-		Model:           model,
-		Temperature:     openai.Float(0.7),
-		MaxOutputTokens: openai.Int(512),
-		Input:           input,
+		Model:        model,
+		Instructions: openai.String(config.SystemPrompt),
+		Input:        input,
+		Reasoning: openai.ReasoningParam{
+			Effort: openai.ReasoningEffortLow,
+		},
 	}
 
 	resp, err := p.client.Responses.New(ctx, params)
@@ -54,7 +56,6 @@ func (p OpenAIProvider) SendMessage(ctx context.Context, messages []domain.Messa
 		return domain.MessageContent{}, fmt.Errorf("openai api error: %w", err)
 	}
 
-	// Return the assistant's response content
 	return domain.MessageContent{
 		Text: resp.OutputText(),
 	}, nil
@@ -132,7 +133,7 @@ func buildOutputMessage(msg domain.Message) responses.ResponseInputItemUnionPara
 
 	return responses.ResponseInputItemUnionParam{
 		OfOutputMessage: &responses.ResponseOutputMessageParam{
-			ID:      msg.ID.String(),
+			ID:      fmt.Sprintf("msg_%s", msg.ID.String()),
 			Content: outputContent,
 			Status:  "completed",
 			Role:    "assistant",

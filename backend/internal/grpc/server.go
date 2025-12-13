@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/curator4/io/backend/internal/core"
@@ -33,7 +32,7 @@ func (s *Server) SendMessage(ctx context.Context, req *pb.SendMessageRequest) (*
 	responseMsg, err := s.core.HandleSendMessage(ctx, content, req.Username)
 	if err != nil {
 		log.Printf("SendMessage error for user %s: %v", req.Username, err)
-		return nil, fmt.Errorf("failed to handle message: %w", err)
+		return nil, toGRPCError(err)
 	}
 
 	// convert back to protobuff format
@@ -53,7 +52,7 @@ func (s *Server) StoreMessage(ctx context.Context, req *pb.StoreMessageRequest) 
 	err := s.core.HandleStoreMessage(ctx, content, req.Username)
 	if err != nil {
 		log.Printf("StoreMessage error for user %s: %v", req.Username, err)
-		return nil, fmt.Errorf("failed to store message: %w", err)
+		return nil, toGRPCError(err)
 	}
 
 	return &pb.StoreMessageResponse{

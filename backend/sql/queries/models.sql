@@ -1,8 +1,7 @@
 -- name: CreateModel :one
-INSERT INTO models (id, created_at, updated_at, provider_id, name, description)
+INSERT INTO models (id, created_at, provider_id, name, description)
 VALUES (
   gen_random_uuid(),
-  NOW(),
   NOW(),
   $1,
   $2,
