@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, Events, Partials } from 'discord.js';
-import { GrpcClient } from './grpc/client';
-import { handleMessage } from './handlers/message';
+import { GrpcClient } from './grpc/client.js';
+import { handleMessage } from './handlers/message.js';
 
 // grpc client, see ./grpc/client
 const grpcHost = process.env.GRPC_HOST || 'localhost';

@@ -7,11 +7,12 @@
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "proto:gen": "protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --proto_path=../proto --ts_proto_out=src/grpc/generated --ts_proto_opt=outputServices=grpc-js,env=node,esModuleInterop=true io.proto",
+    "proto:gen": "protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --proto_path=../proto --proto_path=/usr/include --ts_proto_out=src/grpc/generated --ts_proto_opt=outputServices=grpc-js,env=node,esModuleInterop=true,importSuffix=.js io.proto",
     "lint": "eslint src/",
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "^2.10.2",
     "@grpc/grpc-js": "^1.12.4",
     "discord.js": "^14.25.1",
     "dotenv": "^16.4.7"

@@ -1,6 +1,6 @@
 import { Message } from 'discord.js';
-import { GrpcClient } from '../grpc/client';
-import { SendMessageRequest, StoreMessageRequest } from '../grpc/generated/io';
+import { GrpcClient } from '../grpc/client.js';
+import { SendMessageRequest, StoreMessageRequest } from '../grpc/generated/io.js';
 
 // helpers
 

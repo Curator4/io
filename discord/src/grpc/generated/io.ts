@@ -18,7 +18,7 @@ import {
   type ServiceError,
   type UntypedServiceImplementation,
 } from "@grpc/grpc-js";
-import { Timestamp } from "./google/protobuf/timestamp";
+import { Timestamp } from "./google/protobuf/timestamp.js";
 
 export const protobufPackage = "io";
 

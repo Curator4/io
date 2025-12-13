@@ -7,7 +7,7 @@ COPY . .
 RUN go build -o server ./cmd/server
 
 # runtime
-FROM alpine:latest
+FROM debian:bookworm-slim
 WORKDIR /app
 COPY --from=builder /app/server .
 EXPOSE 50051

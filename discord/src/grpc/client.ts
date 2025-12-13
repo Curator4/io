@@ -5,7 +5,7 @@ import {
   SendMessageResponse,
   StoreMessageRequest,
   StoreMessageResponse,
-} from './generated/io';
+} from './generated/io.js';
 
 export class GrpcClient {
   private client: IOServiceClient;
