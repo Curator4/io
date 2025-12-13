@@ -82,9 +82,9 @@ func ProviderFromPb(p *pb.Provider) Provider {
 // ModelFromPb converts a protobuf Model to domain Model
 func ModelFromPb(m *pb.Model) Model {
 	return Model{
-		ID:       uuid.MustParse(m.Id),
-		Provider: Provider{ID: uuid.MustParse(m.ProviderId)}, // Partial provider
-		Name:     m.Name,
+		ID:          uuid.MustParse(m.Id),
+		Provider:    Provider{ID: uuid.MustParse(m.ProviderId)}, // Partial provider
+		Name:        m.Name,
 		Description: m.Description,
 		CreatedAt:   m.CreatedAt.AsTime(),
 	}
