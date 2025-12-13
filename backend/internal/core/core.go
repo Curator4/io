@@ -9,7 +9,6 @@ import (
 	"github.com/curator4/io/backend/internal/database"
 	"github.com/curator4/io/backend/internal/domain"
 	"github.com/curator4/io/backend/internal/llm"
-	"github.com/google/uuid"
 )
 
 type Session struct {

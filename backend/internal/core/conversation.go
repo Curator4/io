@@ -70,21 +70,6 @@ func (c *Core) getOrCreateActiveConversation(ctx context.Context) (*domain.Conve
 	return &conv, nil
 }
 
-// loadConversationParticipants loads participants for a conversation
-func (c *Core) loadConversationParticipants(ctx context.Context, conv *domain.Conversation) error {
-	participants, err := c.db.GetConversationParticipants(ctx, conv.ID)
-	if err != nil {
-		return fmt.Errorf("failed to get conversation participants: %w", err)
-	}
-
-	conv.Participants = make([]domain.ConversationParticipant, len(participants))
-	for i, p := range participants {
-		conv.Participants[i] = domain.ConversationParticipantFromDB(p)
-	}
-
-	return nil
-}
-
 // addParticipantIfNeeded
 func (c *Core) addParticipantIfNeeded(ctx context.Context, conv *domain.Conversation, user domain.User) error {
 	// check if participant
