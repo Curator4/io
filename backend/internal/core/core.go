@@ -114,7 +114,7 @@ func (c *Core) HandleSendMessage(
 		conv.ID,
 		nil,
 		domain.RoleAssistant,
-		domain.MessageContent{Text: llmContent},
+		llmContent,
 	)
 	if err != nil {
 		err = fmt.Errorf("failed to store assistant message: %w", err)

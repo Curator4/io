@@ -19,6 +19,13 @@ type OpenAIProvider struct {
 	client *openai.Client
 }
 
+// NewOpenAIProvider creates a new OpenAI provider with the given API key
+func NewOpenAIProvider(apiKey string) Provider {
+	return &OpenAIProvider{
+		client: NewOpenAIClient(apiKey),
+	}
+}
+
 // supportedModels maps model names to OpenAI SDK constants
 var supportedModels = map[string]shared.ResponsesModel{
 	"gpt-5.1":    openai.ChatModelGPT5ChatLatest,

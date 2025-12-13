@@ -4,6 +4,7 @@ go 1.25.3
 
 require (
 	github.com/google/uuid v1.6.0
+	github.com/lib/pq v1.10.9
 	github.com/openai/openai-go/v3 v3.9.0
 	google.golang.org/grpc v1.77.0
 	google.golang.org/protobuf v1.36.10
