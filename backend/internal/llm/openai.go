@@ -4,10 +4,8 @@ package llm
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/curator4/io/backend/internal/domain"
-	"github.com/google/uuid"
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
