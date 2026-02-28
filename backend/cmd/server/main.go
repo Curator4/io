@@ -62,13 +62,14 @@ func main() {
 	grpcServer := grpc.NewServer()
 	pb.RegisterIOServiceServer(grpcServer, grpcserver.NewServer(coreInstance))
 
-	// initialize tcp listerner
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
+	// initialize tcp listener
+	addr := fmt.Sprintf(":%s", port)
+	listener, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Fatalf("failed to listen on port %s: %v", port, err)
+		log.Fatalf("failed to listen on %s: %v", addr, err) // #nosec G706
 	}
 
-	log.Printf("backend server succesfully initialized, listening on port %s", port)
+	log.Printf("backend server successfully initialized, listening on %s", addr) // #nosec G706
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

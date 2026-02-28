@@ -101,11 +101,11 @@ type ConversationLifecycle struct {
 
 // DiscordAction defines ai actions that can be triggered in discord by ai
 type DiscordAction struct {
-	Type              ActionType
-	Reaction          *Reaction
-	WebSearchResult   *WebSearchResult
-	ImageGeneration   *ImageGeneration
-	CodeInterpreter   *CodeInterpreterResult
+	Type            ActionType
+	Reaction        *Reaction
+	WebSearchResult *WebSearchResult
+	ImageGeneration *ImageGeneration
+	CodeInterpreter *CodeInterpreterResult
 }
 
 type ActionType string
