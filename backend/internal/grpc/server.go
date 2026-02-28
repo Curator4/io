@@ -25,22 +25,33 @@ func NewServer(core *core.Core) *Server {
 // SendMessage handles the type conversion from pb to and from domain types,
 // calls the core handler, HandleSendMessage, to do the actual logic
 func (s *Server) SendMessage(ctx context.Context, req *pb.SendMessageRequest) (*pb.SendMessageResponse, error) {
-	// convert from protobuff to domain format
+	// convert from protobuf to domain format
 	content := domain.MessageContentFromPb(req.Content)
 
-	// core handler
-	responseMsg, err := s.core.HandleSendMessage(ctx, content, req.Username)
+	// core handler (now returns LLMResponse and lifecycle)
+	llmResponse, lifecycle, err := s.core.HandleSendMessage(ctx, content, req.Username)
 	if err != nil {
 		log.Printf("SendMessage error for user %s: %v", req.Username, err)
 		return nil, toGRPCError(err)
 	}
 
-	// convert back to protobuff format
-	responseContentPb := domain.MessageContentToPb(responseMsg.Content)
+	// convert response content to protobuf
+	responseContentPb := domain.MessageContentToPb(llmResponse.Content)
+
+	// convert actions to protobuf
+	actionsPb := make([]*pb.Action, len(llmResponse.Actions))
+	for i, action := range llmResponse.Actions {
+		actionsPb[i] = domain.ActionToPb(action)
+	}
+
+	// convert lifecycle to protobuf
+	lifecyclePb := domain.ConversationLifecycleToPb(lifecycle)
 
 	// respond
 	return &pb.SendMessageResponse{
-		Content: responseContentPb,
+		Content:   responseContentPb,
+		Actions:   actionsPb,
+		Lifecycle: lifecyclePb,
 	}, nil
 }
 
@@ -49,13 +60,16 @@ func (s *Server) SendMessage(ctx context.Context, req *pb.SendMessageRequest) (*
 func (s *Server) StoreMessage(ctx context.Context, req *pb.StoreMessageRequest) (*pb.StoreMessageResponse, error) {
 	content := domain.MessageContentFromPb(req.Content)
 
-	err := s.core.HandleStoreMessage(ctx, content, req.Username)
+	lifecycle, err := s.core.HandleStoreMessage(ctx, content, req.Username)
 	if err != nil {
 		log.Printf("StoreMessage error for user %s: %v", req.Username, err)
 		return nil, toGRPCError(err)
 	}
 
+	lifecyclePb := domain.ConversationLifecycleToPb(*lifecycle)
+
 	return &pb.StoreMessageResponse{
-		Success: true,
+		Success:   true,
+		Lifecycle: lifecyclePb,
 	}, nil
 }

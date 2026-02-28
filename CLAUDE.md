@@ -4,8 +4,9 @@ Multi-frontend AI assistant with centralized Go backend. Supports multiple AI pr
 
 ## Architecture
 
-- **Backend** (`backend/`) - Go REST API, shared state/logic
-- **Frontends** - Multiple clients (currently Discord bot)
+- **Backend** (`backend/`) - Go gRPC server, shared state/logic
+- **Frontends** - Multiple clients (currently Discord bot), communicate via gRPC
+- **Proto** (`proto/`) - Protobuf service definitions, shared between backend + frontends
 - **Database** - PostgreSQL for persistence
 - **Active State** - Current conversation/AI config lives in app memory, NOT database
 
@@ -31,5 +32,16 @@ Multi-frontend AI assistant with centralized Go backend. Supports multiple AI pr
 
 ## Discord Frontend (`discord/`)
 
-- Built with discord.js
-- Communicates with backend API
+- Built with discord.js (TypeScript, ESM)
+- Communicates with backend via gRPC (@grpc/grpc-js, ts-proto)
+- Handles Discord-specific rendering (embeds, buttons, select menus)
+
+## Current Feature Work
+
+**`ask_user` tool** — allows the AI to present interactive questions/choices mid-conversation:
+- Backend: OpenAI tool definition → returns structured question to frontend
+- Proto: carries question + options between backend and Discord
+- Discord: renders as buttons/select menus, collects response, sends back
+- Backend: feeds answer back into conversation, AI continues
+
+**MCP elicitation** (next) — same Discord UI, but triggered by MCP servers via protocol

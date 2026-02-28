@@ -1,6 +1,11 @@
 import { Message } from 'discord.js';
 import { GrpcClient } from '../grpc/client.js';
-import { SendMessageRequest, StoreMessageRequest } from '../grpc/generated/io.js';
+import {
+  SendMessageRequest,
+  StoreMessageRequest,
+  Action,
+  ConversationLifecycle
+} from '../grpc/generated/io.js';
 
 // helpers
 
@@ -12,6 +17,57 @@ const warrantsResponse = (message: Message): boolean => {
   const startsWithPrefix = message.content.toLowerCase().startsWith('io');
 
   return isDM || isMentioned || startsWithPrefix;
+};
+
+// executeActions processes AI-requested actions (reactions, etc.)
+const executeActions = async (
+  message: Message,
+  actions: Action[] | undefined,
+): Promise<void> => {
+  if (!actions || actions.length === 0) return;
+
+  for (const action of actions) {
+    try {
+      // Handle reaction action
+      if (action.reaction) {
+        await message.react(action.reaction.emoji);
+      }
+      // Future action types can be handled here
+    } catch (error) {
+      console.error('Failed to execute action:', action, error);
+      // Continue processing other actions even if one fails
+    }
+  }
+};
+
+// formatToolIndicators creates indicators for which tools were used
+const formatToolIndicators = (actions: Action[] | undefined): string => {
+  if (!actions || actions.length === 0) return '';
+
+  const indicators: string[] = [];
+
+  for (const action of actions) {
+    if (action.webSearch) {
+      if (action.webSearch.queries.length > 0) {
+        indicators.push(`🔍 Web Search: "${action.webSearch.queries[0]}"`);
+      }
+    } else if (action.imageGeneration) {
+      indicators.push('🎨 Generated Image');
+    } else if (action.codeInterpreter) {
+      indicators.push('💻 Ran Code');
+    }
+  }
+
+  return indicators.length > 0 ? `\n\n*Tools used:*\n${indicators.join('\n')}` : '';
+};
+
+// formatLifecycleMessage creates a user-friendly message about conversation lifecycle
+const formatLifecycleMessage = (lifecycle: ConversationLifecycle | undefined): string | null => {
+  if (!lifecycle || !lifecycle.isNewConversation) {
+    return null;
+  }
+
+  return `_✨ Started new conversation: ${lifecycle.conversationName}_`;
 };
 
 // sendMessage calls the sendMessage remote procedure, replies to the message with the response
@@ -30,7 +86,19 @@ const sendMessage = async (
   };
 
   const response = await grpcClient.sendMessage(request);
+
+  // Build response text
   let text = response.content?.text || 'No response';
+
+  // Prepend lifecycle message if new conversation
+  const lifecycleMsg = formatLifecycleMessage(response.lifecycle);
+  if (lifecycleMsg) {
+    text = lifecycleMsg + '\n\n' + text;
+  }
+
+  // Append tool indicators
+  const toolIndicators = formatToolIndicators(response.actions);
+  text += toolIndicators;
 
   // Discord has a 2000 character limit
   if (text.length > 2000) {
@@ -38,6 +106,9 @@ const sendMessage = async (
   }
 
   await message.reply(text);
+
+  // Execute AI-requested actions (like reactions)
+  await executeActions(message, response.actions);
 };
 
 // storeMessage calls the storeMessage remote procedure, simply storing the message in database

@@ -39,7 +39,7 @@ func (c *Core) getConversationHistory(ctx context.Context, conversationID uuid.U
 }
 
 // getOrCreateActiveConversation returns or creates and returns the active conversation
-func (c *Core) getOrCreateActiveConversation(ctx context.Context) (*domain.Conversation, error) {
+func (c *Core) getOrCreateActiveConversation(ctx context.Context) (conv *domain.Conversation, isNew bool, err error) {
 	c.mu.RLock()
 	activeConv := c.session.ActiveConversation
 	lastActivity := c.session.LastActivity
@@ -47,27 +47,37 @@ func (c *Core) getOrCreateActiveConversation(ctx context.Context) (*domain.Conve
 
 	// check if there is active conversation (checks < 30 min)
 	if activeConv != nil && time.Since(lastActivity) < 30*time.Minute {
-		return activeConv, nil
+		return activeConv, false, nil
 	}
 
 	// create new conversation
 	conversationName := time.Now().Format("Jan 2, 2006 15:04")
-	conv, err := c.createConversation(ctx, conversationName)
+	newConv, err := c.createConversation(ctx, conversationName)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	// set as active
 	c.mu.Lock()
-	c.session.ActiveConversation = &conv
+	c.session.ActiveConversation = &newConv
 	c.mu.Unlock()
 
 	// update last_used_at in db
-	if err := c.db.UpdateConversationLastUsed(ctx, conv.ID); err != nil {
-		return nil, fmt.Errorf("failed to updated conversation last used: %w", err)
+	if err = c.db.UpdateConversationLastUsed(ctx, newConv.ID); err != nil {
+		return nil, false, fmt.Errorf("failed to updated conversation last used: %w", err)
 	}
 
-	return &conv, nil
+	conv = &newConv
+	isNew = true
+	return
+}
+
+// clearActiveConversation clears the active conversation...
+func (c *Core) clearActiveConversation() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.session.ActiveConversation = nil
+	c.session.LastActivity = time.Time{}
 }
 
 // addParticipantIfNeeded

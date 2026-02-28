@@ -90,3 +90,58 @@ type ConversationParticipant struct {
 	UserID         uuid.UUID
 	JoinedAt       time.Time
 }
+
+// ConversationLifecycle tracks conversation state changes so can send to front end
+type ConversationLifecycle struct {
+	IsNewConversation bool
+	ConversationID    uuid.UUID
+	ConversationName  string
+	StartedAt         time.Time
+}
+
+// DiscordAction defines ai actions that can be triggered in discord by ai
+type DiscordAction struct {
+	Type              ActionType
+	Reaction          *Reaction
+	WebSearchResult   *WebSearchResult
+	ImageGeneration   *ImageGeneration
+	CodeInterpreter   *CodeInterpreterResult
+}
+
+type ActionType string
+
+const (
+	ActionTypeReaction        ActionType = "reaction"
+	ActionTypeWebSearch       ActionType = "web_search"
+	ActionTypeImageGeneration ActionType = "image_generation"
+	ActionTypeCodeInterpreter ActionType = "code_interpreter"
+)
+
+type Reaction struct {
+	Emoji string
+}
+
+type WebSearchResult struct {
+	Queries []string
+	Results []WebSearchItem
+}
+
+type WebSearchItem struct {
+	Title   string
+	URL     string
+	Snippet string
+}
+
+type ImageGeneration struct {
+	ImageURL string
+}
+
+type CodeInterpreterResult struct {
+	Code    string
+	Outputs []string
+}
+
+type LLMResponse struct {
+	Content MessageContent
+	Actions []DiscordAction
+}

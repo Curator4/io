@@ -8,7 +8,7 @@ Personal AI assistant with multi-frontend support and centralized Go backend.
 
 **Infrastructure**
 - [x] CI/CD pipeline
-- [ ] Docker containerization
+- [x] Docker containerization
 - [x] PostgreSQL database
   - [x] Schema design
   - [x] Goose migrations
@@ -20,11 +20,15 @@ Personal AI assistant with multi-frontend support and centralized Go backend.
 
 **AI Providers**
 - [ ] Provider orchestration
-- [ ] OpenAI integration
+- [x] OpenAI integration
 - [ ] Claude integration
 - [ ] Grok integration
 - [ ] Gemini integration
 - [ ] Streaming support
+
+**Interactive Tools**
+- [ ] `ask_user` tool — AI presents choices/questions to user mid-conversation
+- [ ] MCP elicitation — MCP servers request structured user input via protocol
 
 **Advanced Features**
 - [ ] Personalities system
@@ -34,9 +38,12 @@ Personal AI assistant with multi-frontend support and centralized Go backend.
 ### Discord Frontend (discord.js)
 
 **Core Functionality**
-- [ ] Basic message flow
+- [x] Basic message flow
+- [ ] Conversation UI indicators
+- [ ] Reasoning level dynamic + UI
 - [ ] Advanced simulated streaming/typing indicators
 - [ ] Tool call/orchestration indicators
+- [ ] Interactive components (buttons/select menus) for `ask_user` + elicitation
 
 **Commands**
 - [ ] `/status` - Display system info
@@ -59,4 +66,4 @@ Personal AI assistant with multi-frontend support and centralized Go backend.
 - [ ] Discord.js utilities
 - [ ] Memory management
 
-cool orchestrator pattern from anthropic here: https://www.anthropic.com/engineering/building-effective-agents?ref=chris.sotherden.io 
+cool orchestrator pattern from anthropic here: https://www.anthropic.com/engineering/building-effective-agents?ref=chris.sotherden.io

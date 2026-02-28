@@ -24,6 +24,7 @@ const (
 	IOService_ListConversations_FullMethodName  = "/io.IOService/ListConversations"
 	IOService_LoadConversation_FullMethodName   = "/io.IOService/LoadConversation"
 	IOService_DeleteConversation_FullMethodName = "/io.IOService/DeleteConversation"
+	IOService_ClearConversation_FullMethodName  = "/io.IOService/ClearConversation"
 	IOService_ListAIConfigs_FullMethodName      = "/io.IOService/ListAIConfigs"
 	IOService_SwitchAIConfig_FullMethodName     = "/io.IOService/SwitchAIConfig"
 	IOService_ListProviders_FullMethodName      = "/io.IOService/ListProviders"
@@ -43,6 +44,7 @@ type IOServiceClient interface {
 	ListConversations(ctx context.Context, in *ListConversationsRequest, opts ...grpc.CallOption) (*ListConversationsResponse, error)
 	LoadConversation(ctx context.Context, in *LoadConversationRequest, opts ...grpc.CallOption) (*LoadConversationResponse, error)
 	DeleteConversation(ctx context.Context, in *DeleteConversationRequest, opts ...grpc.CallOption) (*DeleteConversationResponse, error)
+	ClearConversation(ctx context.Context, in *ClearConversationRequest, opts ...grpc.CallOption) (*ClearConversationResponse, error)
 	// AI Config management
 	ListAIConfigs(ctx context.Context, in *ListAIConfigsRequest, opts ...grpc.CallOption) (*ListAIConfigsResponse, error)
 	SwitchAIConfig(ctx context.Context, in *SwitchAIConfigRequest, opts ...grpc.CallOption) (*SwitchAIConfigResponse, error)
@@ -108,6 +110,16 @@ func (c *iOServiceClient) DeleteConversation(ctx context.Context, in *DeleteConv
 	return out, nil
 }
 
+func (c *iOServiceClient) ClearConversation(ctx context.Context, in *ClearConversationRequest, opts ...grpc.CallOption) (*ClearConversationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ClearConversationResponse)
+	err := c.cc.Invoke(ctx, IOService_ClearConversation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *iOServiceClient) ListAIConfigs(ctx context.Context, in *ListAIConfigsRequest, opts ...grpc.CallOption) (*ListAIConfigsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListAIConfigsResponse)
@@ -152,6 +164,7 @@ type IOServiceServer interface {
 	ListConversations(context.Context, *ListConversationsRequest) (*ListConversationsResponse, error)
 	LoadConversation(context.Context, *LoadConversationRequest) (*LoadConversationResponse, error)
 	DeleteConversation(context.Context, *DeleteConversationRequest) (*DeleteConversationResponse, error)
+	ClearConversation(context.Context, *ClearConversationRequest) (*ClearConversationResponse, error)
 	// AI Config management
 	ListAIConfigs(context.Context, *ListAIConfigsRequest) (*ListAIConfigsResponse, error)
 	SwitchAIConfig(context.Context, *SwitchAIConfigRequest) (*SwitchAIConfigResponse, error)
@@ -181,6 +194,9 @@ func (UnimplementedIOServiceServer) LoadConversation(context.Context, *LoadConve
 }
 func (UnimplementedIOServiceServer) DeleteConversation(context.Context, *DeleteConversationRequest) (*DeleteConversationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteConversation not implemented")
+}
+func (UnimplementedIOServiceServer) ClearConversation(context.Context, *ClearConversationRequest) (*ClearConversationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ClearConversation not implemented")
 }
 func (UnimplementedIOServiceServer) ListAIConfigs(context.Context, *ListAIConfigsRequest) (*ListAIConfigsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListAIConfigs not implemented")
@@ -302,6 +318,24 @@ func _IOService_DeleteConversation_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _IOService_ClearConversation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClearConversationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IOServiceServer).ClearConversation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IOService_ClearConversation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IOServiceServer).ClearConversation(ctx, req.(*ClearConversationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _IOService_ListAIConfigs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListAIConfigsRequest)
 	if err := dec(in); err != nil {
@@ -382,6 +416,10 @@ var IOService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteConversation",
 			Handler:    _IOService_DeleteConversation_Handler,
+		},
+		{
+			MethodName: "ClearConversation",
+			Handler:    _IOService_ClearConversation_Handler,
 		},
 		{
 			MethodName: "ListAIConfigs",

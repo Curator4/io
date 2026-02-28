@@ -101,3 +101,70 @@ func AIConfigToPb(a AIConfig) *pb.AIConfig {
 
 	return config
 }
+
+// ActionToPb converts a domain DiscordAction to protobuf Action
+func ActionToPb(a DiscordAction) *pb.Action {
+	action := &pb.Action{}
+
+	switch a.Type {
+	case ActionTypeReaction:
+		if a.Reaction != nil {
+			action.ActionType = &pb.Action_Reaction{
+				Reaction: &pb.ReactionAction{
+					Emoji: a.Reaction.Emoji,
+				},
+			}
+		}
+
+	case ActionTypeWebSearch:
+		if a.WebSearchResult != nil {
+			// Convert web search items
+			items := make([]*pb.WebSearchItem, len(a.WebSearchResult.Results))
+			for i, item := range a.WebSearchResult.Results {
+				items[i] = &pb.WebSearchItem{
+					Title:   item.Title,
+					Url:     item.URL,
+					Snippet: item.Snippet,
+				}
+			}
+
+			action.ActionType = &pb.Action_WebSearch{
+				WebSearch: &pb.WebSearchAction{
+					Queries: a.WebSearchResult.Queries,
+					Results: items,
+				},
+			}
+		}
+
+	case ActionTypeImageGeneration:
+		if a.ImageGeneration != nil {
+			action.ActionType = &pb.Action_ImageGeneration{
+				ImageGeneration: &pb.ImageGenerationAction{
+					ImageData: a.ImageGeneration.ImageURL,
+				},
+			}
+		}
+
+	case ActionTypeCodeInterpreter:
+		if a.CodeInterpreter != nil {
+			action.ActionType = &pb.Action_CodeInterpreter{
+				CodeInterpreter: &pb.CodeInterpreterAction{
+					Code:    a.CodeInterpreter.Code,
+					Outputs: a.CodeInterpreter.Outputs,
+				},
+			}
+		}
+	}
+
+	return action
+}
+
+// ConversationLifecycleToPb converts domain ConversationLifecycle to protobuf
+func ConversationLifecycleToPb(lc ConversationLifecycle) *pb.ConversationLifecycle {
+	return &pb.ConversationLifecycle{
+		IsNewConversation: lc.IsNewConversation,
+		ConversationId:    lc.ConversationID.String(),
+		ConversationName:  lc.ConversationName,
+		StartedAt:         timestamppb.New(lc.StartedAt),
+	}
+}

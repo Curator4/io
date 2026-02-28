@@ -25,6 +25,48 @@ message MessageContent {
   repeated MediaItem media = 2;
 }
 
+// actions ai can trigger
+message Action {
+  oneof action_type {
+    ReactionAction reaction = 1;
+    WebSearchAction web_search = 2;
+    ImageGenerationAction image_generation = 3;
+    CodeInterpreterAction code_interpreter = 4;
+  };
+}
+
+message ReactionAction {
+  string emoji = 1;
+}
+
+message WebSearchAction {
+  repeated string queries = 1;
+  repeated WebSearchItem results = 2;
+}
+
+message WebSearchItem {
+  string title = 1;
+  string url = 2;
+  string snippet = 3;
+}
+
+message ImageGenerationAction {
+  string image_data = 1; // base64 encoded image
+}
+
+message CodeInterpreterAction {
+  string code = 1;
+  repeated string outputs = 2;
+}
+
+// conversation lifecycle info
+message ConversationLifecycle {
+  bool is_new_conversation = 1;
+  string conversation_id = 2;
+  string conversation_name = 3;
+  google.protobuf.Timestamp started_at = 4;
+}
+
 message Message {
   string id = 1;
   string conversation_id = 2;
@@ -74,6 +116,8 @@ message SendMessageRequest {
 
 message SendMessageResponse {
   MessageContent content = 1; // The AI's response
+  repeated Action actions = 2;
+  ConversationLifecycle lifecycle = 3;
 }
 
 message StoreMessageRequest {
@@ -83,6 +127,7 @@ message StoreMessageRequest {
 
 message StoreMessageResponse {
   bool success = 1;
+  ConversationLifecycle lifecycle = 2;
 }
 
 message ListConversationsRequest {
@@ -134,6 +179,14 @@ message ListProvidersResponse {
   repeated Provider providers = 1;
 }
 
+message ClearConversationRequest {
+  string user_id = 1;
+}
+
+message ClearConversationResponse {
+  bool success = 1;
+}
+
 // The main service
 service IOService {
   // Send a message and get AI response
@@ -145,6 +198,7 @@ service IOService {
   rpc ListConversations(ListConversationsRequest) returns (ListConversationsResponse);
   rpc LoadConversation(LoadConversationRequest) returns (LoadConversationResponse);
   rpc DeleteConversation(DeleteConversationRequest) returns (DeleteConversationResponse);
+  rpc ClearConversation(ClearConversationRequest) returns (ClearConversationResponse);
 
   // AI Config management
   rpc ListAIConfigs(ListAIConfigsRequest) returns (ListAIConfigsResponse);

@@ -38,7 +38,7 @@ func (c *Core) prepareAndStoreUserMessage(
 	ctx context.Context,
 	content domain.MessageContent,
 	username string,
-) (user domain.User, conv *domain.Conversation, err error) {
+) (user domain.User, lifecycle *domain.ConversationLifecycle, err error) {
 	// 1. get/create user
 	user, err = c.getOrCreateUser(ctx, username)
 	if err != nil {
@@ -47,10 +47,18 @@ func (c *Core) prepareAndStoreUserMessage(
 	}
 
 	// 2. get/create conversation
-	conv, err = c.getOrCreateActiveConversation(ctx)
+	conv, isNew, err := c.getOrCreateActiveConversation(ctx)
 	if err != nil {
 		err = fmt.Errorf("failed to get or create active conversation: %w", err)
 		return
+	}
+
+	// 2.1 build lifecycle
+	lifecycle = &domain.ConversationLifecycle{
+		IsNewConversation: isNew,
+		ConversationID:    conv.ID,
+		ConversationName:  conv.Name,
+		StartedAt:         conv.CreatedAt,
 	}
 
 	// 3. add user as conversation participant
@@ -73,21 +81,22 @@ func (c *Core) HandleSendMessage(
 	ctx context.Context,
 	content domain.MessageContent,
 	username string,
-) (llmMsg domain.Message, err error) {
+) (llmResponse domain.LLMResponse, lifecycle domain.ConversationLifecycle, err error) {
 	start := time.Now()
 	log.Printf("[TIMING] HandleSendMessage started for user: %s", username)
 
 	// 1-4. prepare and store user message
 	stepStart := time.Now()
-	_, conv, err := c.prepareAndStoreUserMessage(ctx, content, username)
+	_, lifecyclePtr, err := c.prepareAndStoreUserMessage(ctx, content, username)
 	if err != nil {
 		return
 	}
+	lifecycle = *lifecyclePtr
 	log.Printf("[TIMING] prepareAndStoreUserMessage: %v", time.Since(stepStart))
 
 	// 5. get conversation history
 	stepStart = time.Now()
-	history, err := c.getConversationHistory(ctx, conv.ID)
+	history, err := c.getConversationHistory(ctx, lifecycle.ConversationID)
 	if err != nil {
 		err = fmt.Errorf("failed to get conversation history: %w", err)
 		return
@@ -114,7 +123,7 @@ func (c *Core) HandleSendMessage(
 
 	// 8. call llm
 	stepStart = time.Now()
-	llmContent, err := provider.SendMessage(ctx, history, *config)
+	llmResponse, err = provider.SendMessage(ctx, history, *config)
 	if err != nil {
 		err = fmt.Errorf("%w: %v", ErrLLMUnavailable, err)
 		return
@@ -123,11 +132,11 @@ func (c *Core) HandleSendMessage(
 
 	// 9. store assistant message
 	stepStart = time.Now()
-	llmMsg, err = c.storeMessage(ctx,
-		conv.ID,
+	_, err = c.storeMessage(ctx,
+		lifecycle.ConversationID,
 		nil,
 		domain.RoleAssistant,
-		llmContent,
+		llmResponse.Content,
 	)
 	if err != nil {
 		err = fmt.Errorf("failed to store assistant message: %w", err)
@@ -148,10 +157,10 @@ func (c *Core) HandleStoreMessage(
 	ctx context.Context,
 	content domain.MessageContent,
 	username string,
-) (err error) {
+) (lifecycle *domain.ConversationLifecycle, err error) {
 
 	// 1-4. prepare and store user message
-	_, _, err = c.prepareAndStoreUserMessage(ctx, content, username)
+	_, lifecycle, err = c.prepareAndStoreUserMessage(ctx, content, username)
 	if err != nil {
 		return
 	}
@@ -162,4 +171,19 @@ func (c *Core) HandleStoreMessage(
 	c.mu.Unlock()
 
 	return
+}
+
+// HandleClearConversation clears the active conversation
+func (c *Core) HandleClearConversation(
+	ctx context.Context,
+	username string,
+) error {
+	_, err := c.getOrCreateUser(ctx, username)
+	if err != nil {
+		return fmt.Errorf("failed to get user: %w", err)
+	}
+
+	c.clearActiveConversation()
+	log.Printf("cleared active covnersation for user: %s", username)
+	return nil
 }

@@ -42,6 +42,47 @@ export interface MessageContent {
   media: MediaItem[];
 }
 
+/** actions ai can trigger */
+export interface Action {
+  reaction?: ReactionAction | undefined;
+  webSearch?: WebSearchAction | undefined;
+  imageGeneration?: ImageGenerationAction | undefined;
+  codeInterpreter?: CodeInterpreterAction | undefined;
+}
+
+export interface ReactionAction {
+  emoji: string;
+}
+
+export interface WebSearchAction {
+  queries: string[];
+  results: WebSearchItem[];
+}
+
+export interface WebSearchItem {
+  title: string;
+  url: string;
+  snippet: string;
+}
+
+export interface ImageGenerationAction {
+  /** base64 encoded image */
+  imageData: string;
+}
+
+export interface CodeInterpreterAction {
+  code: string;
+  outputs: string[];
+}
+
+/** conversation lifecycle info */
+export interface ConversationLifecycle {
+  isNewConversation: boolean;
+  conversationId: string;
+  conversationName: string;
+  startedAt: Date | undefined;
+}
+
 export interface Message {
   id: string;
   conversationId: string;
@@ -94,6 +135,8 @@ export interface SendMessageRequest {
 export interface SendMessageResponse {
   /** The AI's response */
   content: MessageContent | undefined;
+  actions: Action[];
+  lifecycle: ConversationLifecycle | undefined;
 }
 
 export interface StoreMessageRequest {
@@ -103,6 +146,7 @@ export interface StoreMessageRequest {
 
 export interface StoreMessageResponse {
   success: boolean;
+  lifecycle: ConversationLifecycle | undefined;
 }
 
 export interface ListConversationsRequest {
@@ -154,6 +198,14 @@ export interface ListProvidersRequest {
 
 export interface ListProvidersResponse {
   providers: Provider[];
+}
+
+export interface ClearConversationRequest {
+  userId: string;
+}
+
+export interface ClearConversationResponse {
+  success: boolean;
 }
 
 function createBaseUser(): User {
@@ -428,6 +480,596 @@ export const MessageContent: MessageFns<MessageContent> = {
     const message = createBaseMessageContent();
     message.text = object.text ?? "";
     message.media = object.media?.map((e) => MediaItem.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseAction(): Action {
+  return { reaction: undefined, webSearch: undefined, imageGeneration: undefined, codeInterpreter: undefined };
+}
+
+export const Action: MessageFns<Action> = {
+  encode(message: Action, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.reaction !== undefined) {
+      ReactionAction.encode(message.reaction, writer.uint32(10).fork()).join();
+    }
+    if (message.webSearch !== undefined) {
+      WebSearchAction.encode(message.webSearch, writer.uint32(18).fork()).join();
+    }
+    if (message.imageGeneration !== undefined) {
+      ImageGenerationAction.encode(message.imageGeneration, writer.uint32(26).fork()).join();
+    }
+    if (message.codeInterpreter !== undefined) {
+      CodeInterpreterAction.encode(message.codeInterpreter, writer.uint32(34).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Action {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAction();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.reaction = ReactionAction.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.webSearch = WebSearchAction.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.imageGeneration = ImageGenerationAction.decode(reader, reader.uint32());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.codeInterpreter = CodeInterpreterAction.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Action {
+    return {
+      reaction: isSet(object.reaction) ? ReactionAction.fromJSON(object.reaction) : undefined,
+      webSearch: isSet(object.webSearch) ? WebSearchAction.fromJSON(object.webSearch) : undefined,
+      imageGeneration: isSet(object.imageGeneration)
+        ? ImageGenerationAction.fromJSON(object.imageGeneration)
+        : undefined,
+      codeInterpreter: isSet(object.codeInterpreter)
+        ? CodeInterpreterAction.fromJSON(object.codeInterpreter)
+        : undefined,
+    };
+  },
+
+  toJSON(message: Action): unknown {
+    const obj: any = {};
+    if (message.reaction !== undefined) {
+      obj.reaction = ReactionAction.toJSON(message.reaction);
+    }
+    if (message.webSearch !== undefined) {
+      obj.webSearch = WebSearchAction.toJSON(message.webSearch);
+    }
+    if (message.imageGeneration !== undefined) {
+      obj.imageGeneration = ImageGenerationAction.toJSON(message.imageGeneration);
+    }
+    if (message.codeInterpreter !== undefined) {
+      obj.codeInterpreter = CodeInterpreterAction.toJSON(message.codeInterpreter);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<Action>, I>>(base?: I): Action {
+    return Action.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<Action>, I>>(object: I): Action {
+    const message = createBaseAction();
+    message.reaction = (object.reaction !== undefined && object.reaction !== null)
+      ? ReactionAction.fromPartial(object.reaction)
+      : undefined;
+    message.webSearch = (object.webSearch !== undefined && object.webSearch !== null)
+      ? WebSearchAction.fromPartial(object.webSearch)
+      : undefined;
+    message.imageGeneration = (object.imageGeneration !== undefined && object.imageGeneration !== null)
+      ? ImageGenerationAction.fromPartial(object.imageGeneration)
+      : undefined;
+    message.codeInterpreter = (object.codeInterpreter !== undefined && object.codeInterpreter !== null)
+      ? CodeInterpreterAction.fromPartial(object.codeInterpreter)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseReactionAction(): ReactionAction {
+  return { emoji: "" };
+}
+
+export const ReactionAction: MessageFns<ReactionAction> = {
+  encode(message: ReactionAction, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.emoji !== "") {
+      writer.uint32(10).string(message.emoji);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ReactionAction {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseReactionAction();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.emoji = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ReactionAction {
+    return { emoji: isSet(object.emoji) ? globalThis.String(object.emoji) : "" };
+  },
+
+  toJSON(message: ReactionAction): unknown {
+    const obj: any = {};
+    if (message.emoji !== "") {
+      obj.emoji = message.emoji;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ReactionAction>, I>>(base?: I): ReactionAction {
+    return ReactionAction.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ReactionAction>, I>>(object: I): ReactionAction {
+    const message = createBaseReactionAction();
+    message.emoji = object.emoji ?? "";
+    return message;
+  },
+};
+
+function createBaseWebSearchAction(): WebSearchAction {
+  return { queries: [], results: [] };
+}
+
+export const WebSearchAction: MessageFns<WebSearchAction> = {
+  encode(message: WebSearchAction, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.queries) {
+      writer.uint32(10).string(v!);
+    }
+    for (const v of message.results) {
+      WebSearchItem.encode(v!, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): WebSearchAction {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseWebSearchAction();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.queries.push(reader.string());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.results.push(WebSearchItem.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): WebSearchAction {
+    return {
+      queries: globalThis.Array.isArray(object?.queries) ? object.queries.map((e: any) => globalThis.String(e)) : [],
+      results: globalThis.Array.isArray(object?.results)
+        ? object.results.map((e: any) => WebSearchItem.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: WebSearchAction): unknown {
+    const obj: any = {};
+    if (message.queries?.length) {
+      obj.queries = message.queries;
+    }
+    if (message.results?.length) {
+      obj.results = message.results.map((e) => WebSearchItem.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<WebSearchAction>, I>>(base?: I): WebSearchAction {
+    return WebSearchAction.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<WebSearchAction>, I>>(object: I): WebSearchAction {
+    const message = createBaseWebSearchAction();
+    message.queries = object.queries?.map((e) => e) || [];
+    message.results = object.results?.map((e) => WebSearchItem.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseWebSearchItem(): WebSearchItem {
+  return { title: "", url: "", snippet: "" };
+}
+
+export const WebSearchItem: MessageFns<WebSearchItem> = {
+  encode(message: WebSearchItem, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.title !== "") {
+      writer.uint32(10).string(message.title);
+    }
+    if (message.url !== "") {
+      writer.uint32(18).string(message.url);
+    }
+    if (message.snippet !== "") {
+      writer.uint32(26).string(message.snippet);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): WebSearchItem {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseWebSearchItem();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.title = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.url = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.snippet = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): WebSearchItem {
+    return {
+      title: isSet(object.title) ? globalThis.String(object.title) : "",
+      url: isSet(object.url) ? globalThis.String(object.url) : "",
+      snippet: isSet(object.snippet) ? globalThis.String(object.snippet) : "",
+    };
+  },
+
+  toJSON(message: WebSearchItem): unknown {
+    const obj: any = {};
+    if (message.title !== "") {
+      obj.title = message.title;
+    }
+    if (message.url !== "") {
+      obj.url = message.url;
+    }
+    if (message.snippet !== "") {
+      obj.snippet = message.snippet;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<WebSearchItem>, I>>(base?: I): WebSearchItem {
+    return WebSearchItem.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<WebSearchItem>, I>>(object: I): WebSearchItem {
+    const message = createBaseWebSearchItem();
+    message.title = object.title ?? "";
+    message.url = object.url ?? "";
+    message.snippet = object.snippet ?? "";
+    return message;
+  },
+};
+
+function createBaseImageGenerationAction(): ImageGenerationAction {
+  return { imageData: "" };
+}
+
+export const ImageGenerationAction: MessageFns<ImageGenerationAction> = {
+  encode(message: ImageGenerationAction, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.imageData !== "") {
+      writer.uint32(10).string(message.imageData);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ImageGenerationAction {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseImageGenerationAction();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.imageData = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ImageGenerationAction {
+    return { imageData: isSet(object.imageData) ? globalThis.String(object.imageData) : "" };
+  },
+
+  toJSON(message: ImageGenerationAction): unknown {
+    const obj: any = {};
+    if (message.imageData !== "") {
+      obj.imageData = message.imageData;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ImageGenerationAction>, I>>(base?: I): ImageGenerationAction {
+    return ImageGenerationAction.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ImageGenerationAction>, I>>(object: I): ImageGenerationAction {
+    const message = createBaseImageGenerationAction();
+    message.imageData = object.imageData ?? "";
+    return message;
+  },
+};
+
+function createBaseCodeInterpreterAction(): CodeInterpreterAction {
+  return { code: "", outputs: [] };
+}
+
+export const CodeInterpreterAction: MessageFns<CodeInterpreterAction> = {
+  encode(message: CodeInterpreterAction, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.code !== "") {
+      writer.uint32(10).string(message.code);
+    }
+    for (const v of message.outputs) {
+      writer.uint32(18).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CodeInterpreterAction {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCodeInterpreterAction();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.code = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.outputs.push(reader.string());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CodeInterpreterAction {
+    return {
+      code: isSet(object.code) ? globalThis.String(object.code) : "",
+      outputs: globalThis.Array.isArray(object?.outputs) ? object.outputs.map((e: any) => globalThis.String(e)) : [],
+    };
+  },
+
+  toJSON(message: CodeInterpreterAction): unknown {
+    const obj: any = {};
+    if (message.code !== "") {
+      obj.code = message.code;
+    }
+    if (message.outputs?.length) {
+      obj.outputs = message.outputs;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CodeInterpreterAction>, I>>(base?: I): CodeInterpreterAction {
+    return CodeInterpreterAction.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CodeInterpreterAction>, I>>(object: I): CodeInterpreterAction {
+    const message = createBaseCodeInterpreterAction();
+    message.code = object.code ?? "";
+    message.outputs = object.outputs?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseConversationLifecycle(): ConversationLifecycle {
+  return { isNewConversation: false, conversationId: "", conversationName: "", startedAt: undefined };
+}
+
+export const ConversationLifecycle: MessageFns<ConversationLifecycle> = {
+  encode(message: ConversationLifecycle, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.isNewConversation !== false) {
+      writer.uint32(8).bool(message.isNewConversation);
+    }
+    if (message.conversationId !== "") {
+      writer.uint32(18).string(message.conversationId);
+    }
+    if (message.conversationName !== "") {
+      writer.uint32(26).string(message.conversationName);
+    }
+    if (message.startedAt !== undefined) {
+      Timestamp.encode(toTimestamp(message.startedAt), writer.uint32(34).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ConversationLifecycle {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseConversationLifecycle();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.isNewConversation = reader.bool();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.conversationId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.conversationName = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.startedAt = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ConversationLifecycle {
+    return {
+      isNewConversation: isSet(object.isNewConversation) ? globalThis.Boolean(object.isNewConversation) : false,
+      conversationId: isSet(object.conversationId) ? globalThis.String(object.conversationId) : "",
+      conversationName: isSet(object.conversationName) ? globalThis.String(object.conversationName) : "",
+      startedAt: isSet(object.startedAt) ? fromJsonTimestamp(object.startedAt) : undefined,
+    };
+  },
+
+  toJSON(message: ConversationLifecycle): unknown {
+    const obj: any = {};
+    if (message.isNewConversation !== false) {
+      obj.isNewConversation = message.isNewConversation;
+    }
+    if (message.conversationId !== "") {
+      obj.conversationId = message.conversationId;
+    }
+    if (message.conversationName !== "") {
+      obj.conversationName = message.conversationName;
+    }
+    if (message.startedAt !== undefined) {
+      obj.startedAt = message.startedAt.toISOString();
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ConversationLifecycle>, I>>(base?: I): ConversationLifecycle {
+    return ConversationLifecycle.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ConversationLifecycle>, I>>(object: I): ConversationLifecycle {
+    const message = createBaseConversationLifecycle();
+    message.isNewConversation = object.isNewConversation ?? false;
+    message.conversationId = object.conversationId ?? "";
+    message.conversationName = object.conversationName ?? "";
+    message.startedAt = object.startedAt ?? undefined;
     return message;
   },
 };
@@ -1157,13 +1799,19 @@ export const SendMessageRequest: MessageFns<SendMessageRequest> = {
 };
 
 function createBaseSendMessageResponse(): SendMessageResponse {
-  return { content: undefined };
+  return { content: undefined, actions: [], lifecycle: undefined };
 }
 
 export const SendMessageResponse: MessageFns<SendMessageResponse> = {
   encode(message: SendMessageResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.content !== undefined) {
       MessageContent.encode(message.content, writer.uint32(10).fork()).join();
+    }
+    for (const v of message.actions) {
+      Action.encode(v!, writer.uint32(18).fork()).join();
+    }
+    if (message.lifecycle !== undefined) {
+      ConversationLifecycle.encode(message.lifecycle, writer.uint32(26).fork()).join();
     }
     return writer;
   },
@@ -1183,6 +1831,22 @@ export const SendMessageResponse: MessageFns<SendMessageResponse> = {
           message.content = MessageContent.decode(reader, reader.uint32());
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.actions.push(Action.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.lifecycle = ConversationLifecycle.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1193,13 +1857,23 @@ export const SendMessageResponse: MessageFns<SendMessageResponse> = {
   },
 
   fromJSON(object: any): SendMessageResponse {
-    return { content: isSet(object.content) ? MessageContent.fromJSON(object.content) : undefined };
+    return {
+      content: isSet(object.content) ? MessageContent.fromJSON(object.content) : undefined,
+      actions: globalThis.Array.isArray(object?.actions) ? object.actions.map((e: any) => Action.fromJSON(e)) : [],
+      lifecycle: isSet(object.lifecycle) ? ConversationLifecycle.fromJSON(object.lifecycle) : undefined,
+    };
   },
 
   toJSON(message: SendMessageResponse): unknown {
     const obj: any = {};
     if (message.content !== undefined) {
       obj.content = MessageContent.toJSON(message.content);
+    }
+    if (message.actions?.length) {
+      obj.actions = message.actions.map((e) => Action.toJSON(e));
+    }
+    if (message.lifecycle !== undefined) {
+      obj.lifecycle = ConversationLifecycle.toJSON(message.lifecycle);
     }
     return obj;
   },
@@ -1211,6 +1885,10 @@ export const SendMessageResponse: MessageFns<SendMessageResponse> = {
     const message = createBaseSendMessageResponse();
     message.content = (object.content !== undefined && object.content !== null)
       ? MessageContent.fromPartial(object.content)
+      : undefined;
+    message.actions = object.actions?.map((e) => Action.fromPartial(e)) || [];
+    message.lifecycle = (object.lifecycle !== undefined && object.lifecycle !== null)
+      ? ConversationLifecycle.fromPartial(object.lifecycle)
       : undefined;
     return message;
   },
@@ -1295,13 +1973,16 @@ export const StoreMessageRequest: MessageFns<StoreMessageRequest> = {
 };
 
 function createBaseStoreMessageResponse(): StoreMessageResponse {
-  return { success: false };
+  return { success: false, lifecycle: undefined };
 }
 
 export const StoreMessageResponse: MessageFns<StoreMessageResponse> = {
   encode(message: StoreMessageResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.success !== false) {
       writer.uint32(8).bool(message.success);
+    }
+    if (message.lifecycle !== undefined) {
+      ConversationLifecycle.encode(message.lifecycle, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -1321,6 +2002,14 @@ export const StoreMessageResponse: MessageFns<StoreMessageResponse> = {
           message.success = reader.bool();
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.lifecycle = ConversationLifecycle.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1331,13 +2020,19 @@ export const StoreMessageResponse: MessageFns<StoreMessageResponse> = {
   },
 
   fromJSON(object: any): StoreMessageResponse {
-    return { success: isSet(object.success) ? globalThis.Boolean(object.success) : false };
+    return {
+      success: isSet(object.success) ? globalThis.Boolean(object.success) : false,
+      lifecycle: isSet(object.lifecycle) ? ConversationLifecycle.fromJSON(object.lifecycle) : undefined,
+    };
   },
 
   toJSON(message: StoreMessageResponse): unknown {
     const obj: any = {};
     if (message.success !== false) {
       obj.success = message.success;
+    }
+    if (message.lifecycle !== undefined) {
+      obj.lifecycle = ConversationLifecycle.toJSON(message.lifecycle);
     }
     return obj;
   },
@@ -1348,6 +2043,9 @@ export const StoreMessageResponse: MessageFns<StoreMessageResponse> = {
   fromPartial<I extends Exact<DeepPartial<StoreMessageResponse>, I>>(object: I): StoreMessageResponse {
     const message = createBaseStoreMessageResponse();
     message.success = object.success ?? false;
+    message.lifecycle = (object.lifecycle !== undefined && object.lifecycle !== null)
+      ? ConversationLifecycle.fromPartial(object.lifecycle)
+      : undefined;
     return message;
   },
 };
@@ -2122,6 +2820,122 @@ export const ListProvidersResponse: MessageFns<ListProvidersResponse> = {
   },
 };
 
+function createBaseClearConversationRequest(): ClearConversationRequest {
+  return { userId: "" };
+}
+
+export const ClearConversationRequest: MessageFns<ClearConversationRequest> = {
+  encode(message: ClearConversationRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== "") {
+      writer.uint32(10).string(message.userId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ClearConversationRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseClearConversationRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.userId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ClearConversationRequest {
+    return { userId: isSet(object.userId) ? globalThis.String(object.userId) : "" };
+  },
+
+  toJSON(message: ClearConversationRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== "") {
+      obj.userId = message.userId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ClearConversationRequest>, I>>(base?: I): ClearConversationRequest {
+    return ClearConversationRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ClearConversationRequest>, I>>(object: I): ClearConversationRequest {
+    const message = createBaseClearConversationRequest();
+    message.userId = object.userId ?? "";
+    return message;
+  },
+};
+
+function createBaseClearConversationResponse(): ClearConversationResponse {
+  return { success: false };
+}
+
+export const ClearConversationResponse: MessageFns<ClearConversationResponse> = {
+  encode(message: ClearConversationResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.success !== false) {
+      writer.uint32(8).bool(message.success);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ClearConversationResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseClearConversationResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.success = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ClearConversationResponse {
+    return { success: isSet(object.success) ? globalThis.Boolean(object.success) : false };
+  },
+
+  toJSON(message: ClearConversationResponse): unknown {
+    const obj: any = {};
+    if (message.success !== false) {
+      obj.success = message.success;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ClearConversationResponse>, I>>(base?: I): ClearConversationResponse {
+    return ClearConversationResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ClearConversationResponse>, I>>(object: I): ClearConversationResponse {
+    const message = createBaseClearConversationResponse();
+    message.success = object.success ?? false;
+    return message;
+  },
+};
+
 /** The main service */
 export type IOServiceService = typeof IOServiceService;
 export const IOServiceService = {
@@ -2180,6 +2994,17 @@ export const IOServiceService = {
       Buffer.from(DeleteConversationResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer): DeleteConversationResponse => DeleteConversationResponse.decode(value),
   },
+  clearConversation: {
+    path: "/io.IOService/ClearConversation",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: ClearConversationRequest): Buffer =>
+      Buffer.from(ClearConversationRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): ClearConversationRequest => ClearConversationRequest.decode(value),
+    responseSerialize: (value: ClearConversationResponse): Buffer =>
+      Buffer.from(ClearConversationResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): ClearConversationResponse => ClearConversationResponse.decode(value),
+  },
   /** AI Config management */
   listAiConfigs: {
     path: "/io.IOService/ListAIConfigs",
@@ -2224,6 +3049,7 @@ export interface IOServiceServer extends UntypedServiceImplementation {
   listConversations: handleUnaryCall<ListConversationsRequest, ListConversationsResponse>;
   loadConversation: handleUnaryCall<LoadConversationRequest, LoadConversationResponse>;
   deleteConversation: handleUnaryCall<DeleteConversationRequest, DeleteConversationResponse>;
+  clearConversation: handleUnaryCall<ClearConversationRequest, ClearConversationResponse>;
   /** AI Config management */
   listAiConfigs: handleUnaryCall<ListAIConfigsRequest, ListAIConfigsResponse>;
   switchAiConfig: handleUnaryCall<SwitchAIConfigRequest, SwitchAIConfigResponse>;
@@ -2309,6 +3135,21 @@ export interface IOServiceClient extends Client {
     metadata: Metadata,
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: DeleteConversationResponse) => void,
+  ): ClientUnaryCall;
+  clearConversation(
+    request: ClearConversationRequest,
+    callback: (error: ServiceError | null, response: ClearConversationResponse) => void,
+  ): ClientUnaryCall;
+  clearConversation(
+    request: ClearConversationRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: ClearConversationResponse) => void,
+  ): ClientUnaryCall;
+  clearConversation(
+    request: ClearConversationRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: ClearConversationResponse) => void,
   ): ClientUnaryCall;
   /** AI Config management */
   listAiConfigs(

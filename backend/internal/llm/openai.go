@@ -3,6 +3,7 @@ package llm
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/curator4/io/backend/internal/domain"
@@ -31,11 +32,11 @@ var supportedModels = map[string]shared.ResponsesModel{
 	"gpt-5-mini": openai.ChatModelGPT5Mini,
 }
 
-func (p OpenAIProvider) SendMessage(ctx context.Context, messages []domain.Message, config domain.AIConfig) (domain.MessageContent, error) {
+func (p OpenAIProvider) SendMessage(ctx context.Context, messages []domain.Message, config domain.AIConfig) (domain.LLMResponse, error) {
 
 	model, ok := supportedModels[config.Model.Name]
 	if !ok {
-		return domain.MessageContent{}, fmt.Errorf("unknown or unsupported model: %s", config.Model.Name)
+		return domain.LLMResponse{}, fmt.Errorf("unknown or unsupported model: %s", config.Model.Name)
 	}
 
 	input := responses.ResponseNewParamsInputUnion{
@@ -46,6 +47,7 @@ func (p OpenAIProvider) SendMessage(ctx context.Context, messages []domain.Messa
 		Model:        model,
 		Instructions: openai.String(config.SystemPrompt),
 		Input:        input,
+		Tools:        defineTools(),
 		Reasoning: openai.ReasoningParam{
 			Effort: openai.ReasoningEffortLow,
 		},
@@ -53,11 +55,16 @@ func (p OpenAIProvider) SendMessage(ctx context.Context, messages []domain.Messa
 
 	resp, err := p.client.Responses.New(ctx, params)
 	if err != nil {
-		return domain.MessageContent{}, fmt.Errorf("openai api error: %w", err)
+		return domain.LLMResponse{}, fmt.Errorf("openai api error: %w", err)
 	}
 
-	return domain.MessageContent{
-		Text: resp.OutputText(),
+	action := extractActionsFromResponse(resp)
+
+	return domain.LLMResponse{
+		Content: domain.MessageContent{
+			Text: resp.OutputText(),
+		},
+		Actions: action,
 	}, nil
 }
 
@@ -158,4 +165,113 @@ func messagesToOpenAIInput(messages []domain.Message) responses.ResponseInputPar
 	}
 
 	return items
+}
+
+// defineTools creates the tool definitions for the Responses API
+func defineTools() []responses.ToolUnionParam {
+	return []responses.ToolUnionParam{
+		// Custom reaction tool
+		{
+			OfFunction: &responses.FunctionToolParam{
+				Name:        "add_reaction",
+				Description: openai.String("Add an emoji reaction to the current message. Use this to express emotion, agreement, or emphasis without interrupting the conversation flow."),
+				Parameters: openai.FunctionParameters{
+					"type": "object",
+					"properties": map[string]any{
+						"emoji": map[string]any{
+							"type":        "string",
+							"description": "The emoji to react with (e.g., '👍', '❤️', '🎉', '🤔', '😂', '💀', '🫡', '😭', '😓', '🤔', '❤️', '👀')",
+						},
+					},
+					"required": []string{"emoji"},
+				},
+			},
+		},
+
+		// Web search (stable) - uses helper function
+		responses.ToolParamOfWebSearch(responses.WebSearchToolTypeWebSearch),
+
+		// Image generation
+		{
+			OfImageGeneration: &responses.ToolImageGenerationParam{},
+		},
+	}
+}
+
+// extractActionsFromResponse parses tool calls from the Responses API response
+func extractActionsFromResponse(resp *responses.Response) []domain.DiscordAction {
+	actions := make([]domain.DiscordAction, 0)
+
+	if resp.Output == nil {
+		return actions
+	}
+
+	// Iterate through output items looking for tool calls
+	for _, output := range resp.Output {
+		switch output.Type {
+		case "function_call":
+			funcCall := output.AsFunctionCall()
+
+			switch funcCall.Name {
+			case "add_reaction":
+				// Parse arguments JSON string
+				var args map[string]any
+				if err := json.Unmarshal([]byte(funcCall.Arguments), &args); err != nil {
+					continue
+				}
+
+				emoji, ok := args["emoji"].(string)
+				if !ok {
+					continue
+				}
+
+				actions = append(actions, domain.DiscordAction{
+					Type: domain.ActionTypeReaction,
+					Reaction: &domain.Reaction{
+						Emoji: emoji,
+					},
+				})
+			}
+
+		case "web_search_call":
+			webSearch := output.AsWebSearchCall()
+
+			// Extract search sources from action
+			searchItems := make([]domain.WebSearchItem, 0)
+			if webSearch.Action.Type == "search" {
+				for _, source := range webSearch.Action.Sources {
+					searchItems = append(searchItems, domain.WebSearchItem{
+						Title:   "", // Not provided in response
+						URL:     source.URL,
+						Snippet: "", // Not provided in response
+					})
+				}
+			}
+
+			queries := []string{}
+			if webSearch.Action.Query != "" {
+				queries = append(queries, webSearch.Action.Query)
+			}
+
+			actions = append(actions, domain.DiscordAction{
+				Type: domain.ActionTypeWebSearch,
+				WebSearchResult: &domain.WebSearchResult{
+					Queries: queries,
+					Results: searchItems,
+				},
+			})
+
+		case "image_generation_call":
+			imageGen := output.AsImageGenerationCall()
+
+			actions = append(actions, domain.DiscordAction{
+				Type: domain.ActionTypeImageGeneration,
+				ImageGeneration: &domain.ImageGeneration{
+					ImageURL: imageGen.Result,
+				},
+			})
+		}
+	}
+
+	return actions
 }
